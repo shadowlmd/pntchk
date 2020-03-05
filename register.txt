@@ -1,0 +1,96 @@
+‘¯¨á®ª § p¥£¨áâp¨p®¢ ­­ëå ¯®«ì§®¢ â¥«¥© PNTCHK:
+óĞÉÓÏË ÚÁpÅÇÉÓÔpÉpÏ×ÁÎÎÙÈ ĞÏÌØÚÏ×ÁÔÅÌÅÊ PNTCHK:
+Ñïèñîê çàpåãèñòpèpîâàííûõ ïîëüçîâàòåëåé PNTCHK:
+
+ Serial       Owner                  Address
+
+ Q#001A   Pavel I.Osipov        2:5020/770@fidonet
+ Q#002A   Alex GolosOFF         2:5020/381@fidonet
+ Q#003A   Dmitry Lebedev        2:5020/1216@fidonet
+ Q#004A   Vladimir Katushenok   2:5020/1255@fidonet
+ Q#005A   Mitry Matyushkov      2:450/97@fidonet
+ Q#006B   Victor Butry          2:5070/25@fidonet
+ Q#007B   Alex Kapralov Jr.     2:5030/614@fidonet
+ Q#008C   Andrey Kosterin       2:5092/17@fidonet
+ Q#009C   Yuri Bobrov           2:5029/2@fidonet
+        ---------------------
+ Q#010C | Konstantin Gilyov |   2:5000/72@fidonet
+        ---------------------
+ Q#011C   Vlad Spiridonov       2:5049/30@fidonet
+ Q#012C   Eugene Gladchenko     2:5061/15@fidonet
+ Q#013C   Alex Komarskix        2:5010/30@fidonet
+ Q#014C   Anton Kuznetsov       2:46/50@fidonet
+ Q#015C   Igor Grabelnikov      2:5063/3@fidonet
+ Q#016C   Serg Rachevsky        2:5040/33@fidonet
+ Q#017C   Vitaly Libo           2:5083/31@fidonet
+ Q#018B   Aleksey Skripka       2:5020/605.49@fidonet
+ Q#019C   Dmitriy Puhov         2:5074/3@fidonet
+ Q#020B   Igor V. Shulga        2:463/299@fidonet
+ Q#021C   Ahmed Mirsalimov      2:5055/41@fidonet
+ Q#022A   ¤¥¤ Šã§ì¬¨ç           2:5020/1428.1@fidonet
+ Q#023C   Alexander Buryak      2:4656/2@fidonet
+ Q#024C   Zakhar Bardymov       2:5070/31@fidonet
+ Q#025C   Vasily Rechkin        2:454/2@fidonet
+ Q#026C   Alex Belozuerov       2:5014/1@fidonet
+ Q#027C   Sergey Kazinin        2:5058/103@fidonet
+ Q#028C   Mihael Gusev          2:461/133@fidonet
+ Q#029C   Roman Shocker         2:5078/24@fidonet
+ Q#030C   Gennady Zvonov        2:5015/4@fidonet
+ Q#031C   Andrey Promislov      2:4652/1@fidonet
+ Q#032C   Anatoly Nikitin       2:5009/3@fidonet
+ Q#033C   Vovik Petrov          2:5085/42@fidonet
+ Q#034B   Alex Bunin            2:5027/20@fidonet
+ Q#035C   Piter Grossbey        2:5004/11@fidonet
+ Q#036C   Dennis Sulimov        2:5020/1507@fidonet
+ Q#037C   Oleg Cherniy          2:4625/40@fidonet
+ Q#038C   Vladimir Tsimbaluk    2:460/30@fidonet
+ Q#039C   Yury Karapuzov        2:4613/5@fidonet
+ Q#040C   Vladislav Velichko    2:4654/7@fidonet
+ Q#041C   Sergey Mikhnenkov     2:5090/22@fidonet
+ Q#042C   Kostya Krivonogov     2:5027/12@fidonet
+ Q#043C   Oleg Krivoshatkin     2:5067/3@fidonet
+ Q#044C   Vitaliy Babiy         2:5083/61@fidonet
+ Q#045C   Valery Lutoshkin      2:5005/77@fidonet
+ Q#046C   Igor V. Dronov        2:5058/18@fidonet
+ Q#047C   Alex Stepantsov       2:5092/2@fidonet
+ Q#048C   Dmitry Rusov          2:5090/94@fidonet
+ Q#049C   serge vikulov         2:5080/5@fidonet
+ Q#050C   Alex Cherkas          2:464/117@fidonet
+ Q#051C   Valery Abeev          2:4642/17@fidonet
+ Q#052C   mihail kapitanov      2:465/239@fidonet
+ Q#053C   Vladimir Fyodorov     2:6035/3@fidonet
+ Q#054C   Mike Rumyantsev       2:4647/13@fidonet
+ Q#055B   Dmitry V. Roenko      2:5020/2125@fidonet
+ Q#056C   egor s. kolesnikov    2:5000/126@fidonet
+ Q#057C   Alexey Antonyuk       2:5030/731@fidonet
+ Q#058B   Max Levenkov          2:5000/117@fidonet
+ Q#059C   Eugene Bugakow        2:5029/28@fidonet
+ Q#060C   Yuri Kotilevski       2:4615/25@fidonet
+ Q#061C   Alexandr Shananin     2:5094/77@fidonet
+ Q#062C   Evgeny Karpov         2:5023/17@fidonet
+ Q#063C   Yuri Chumakov         2:5079/65@fidonet
+ Q#064C   Sean Rima             2:263/950@fidonet
+ Q#065C   Dmitriy Usov          2:6070/228@fidonet
+ Q#066A   Sergey Fadeyev        2:5020/877@fidonet
+ Q#067C   Vladimir Frolov       2:452/33@fidonet
+ Q#068C   Alex Berez            2:5037/666@fidonet
+ Q#069C   Jury Roshin           2:5007/11@fidonet
+ Q#070C   Valera Gorovoj        2:4635/40@fidonet
+ Q#071C   Yaroslav Tchayckovsky 2:5076/13.12@fidonet
+ Q#072C   Evgeniy Aksamentov    2:6070/34@fidonet
+ Q#073C   Paul Lepestkin        2:5053/50@fidonet
+ Q#074C   Andrew Zuley          2:4641/111@fidonet
+ Q#075C   Andy Mihaylow         2:5050/33@fidonet
+ Q#076C   Denis B. Mashkov      2:5069/18@fidonet
+ Q#077C   Vladimir Karin        2:5097/33@fidonet
+ Q#078C   Serg Ershov           2:5009/14@fidonet
+ Q#079C   Dmitry Sysoev         2:6028/4@fidonet
+ Q#080C   Alexander Reznikov    2:4600/220@fidonet
+ Q#081C   Mishel Tchislov       2:5099/11@fidonet
+ Q#082C   Eugene V. Subbotin    2:5075/35@fidonet
+
+p¨á®¥¤¨­ï©â¥áì! “á«®¢¨ï p¥£¨áâp æ¨¨ - ¢ ä ©«¥ PNTCHK.TXT
+ğpÉÓÏÅÄÉÎÑÊÔÅÓØ! õÓÌÏ×ÉÑ pÅÇÉÓÔpÁÃÉÉ - × ÆÁÊÌÅ PNTCHK.TXT
+Ïpèñîåäèíÿéòåñü! Óñëîâèÿ påãèñòpàöèè - â ôàéëå PNTCHK.TXT
+
+The author.

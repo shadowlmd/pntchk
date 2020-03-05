@@ -1,0 +1,2400 @@
+   =========================================================================
+   ATTENTION! It is a draft copy. It is represented only for EVALUATION
+   purposes. Here for certain there are errors and inaccuracies, therefore
+   it CANNOT be used for daily operation.
+
+   I ask all your comments, wishes and remarks to be sent to me by
+   netmail: 2:5020/770.
+
+   Please don't pay attention to absence of indexing of pages - it will
+   be made in the last moment.
+
+   Thanks,
+   Pavel
+   ========================================================================
+   04.01.2004
+
+
+                            PNTCHK, v1.00+ (release)
+                       Professional pointsegment checker
+          Copyright (c) 1997,2004 Pavel I.Osipov (2:5020/770@fidonet)
+                Manual translation (c) 2002-2004 Pavel I.Osipov,
+                Sergey Tsvetkov, Slava Belkov, Alexei Klimenko,
+                             Katerina Znamenskaya
+                              All rights reserved
+                      ===================================
+
+
+     Contents
+     --------------------------------------------------------------------
+
+     1.     Introduction - What is PNTCHK?
+
+     2.     Installation
+     2.1    Command line arguments
+
+     3.     Configuration
+     3.1    How PNTCHK works
+     3.1.1  Validity check on incoming pointlist segments (argument "-S").
+     3.1.2  Pointlist compilation mode (argument "-L").
+
+     3.2    The CTL file
+     3.2.1  Sample file
+     3.2.2  Section SYSTEM
+     3.2.3  Section MESSAGES
+     3.2.4  Section NODELIST
+     3.2.5  Section GENERAL
+     3.2.6  Section STRING
+     3.2.7  Section AUTOCORRECTION
+     3.2.8  Section EXTERNAL
+     3.2.9  Section POINTLIST
+     3.2.10 Section GENERAL TEMPLATES
+     3.2.11 Section ERROR TEMPLATES
+     3.2.12 Section POINTLIST TEMPLATES
+     3.2.13 Section MACROS
+
+     3.3    Regular expressions (regexp)
+
+     3.4    Errorlevels
+
+     4.     Macros
+
+     5.     Lite version of PNTCHK
+
+     6.     Legal stuff
+     6.1    Licence and Disclaimer
+     6.2    Distribution
+     6.3    Copyrights and Trademarks
+     6.4    Credits
+
+     7.     Final words
+     7.1    System requirements
+     7.2    Where to get new versions
+     7.3    Version history
+     7.4    Thanks to...
+
+
+
+     1.  Introduction - What is PNTCHK?
+     --------------------------------------------------------------------
+
+     The process of work of network pointlist coordinators (pointlist
+     keepers) constantly requires performing of validity check on incoming
+     pointlist segments. Unfortunately, to err is humanum, so the segments
+     often contain errors, not corresponding the requirements of the
+     technical standards.
+     The amount of coordinator's work is rather big, so it wouldn't be
+     bad to automatize the processing of pointlist segments.
+
+     PNTCHK was designed to help pointlist coordinators in their work.
+     "PNTCHK" is an abbreviation of Professional pointsegment checker.
+     Why professional? Because it can perform many tasks, surpassing
+     analogous software.
+
+     Moreover, the program can be used not only to check the incoming
+     segments, but also for compilation of the whole pointlist. The
+     advantage of combination of such two tasks in one program is in
+     the fact, that the segments can be checked not only at the moment
+     of their arrival, but also when they are included into the pointlist,
+     even if the requirements have been changed since the segment came.
+
+     This are the main features of the software:
+
+     PNTCHK ...
+     - does all the checks performed by ordinary checkers: baud rate, phone
+       number, flags;
+     - has nodelist processing routine: checks for presence of the bossnode
+       and its status in the nodelist; this feature is very flexible: for
+       every possible nodelist status of bossnodes (hub, normal, pvt,
+       hold, down) you can define, whether to process their segments
+       or not;
+     - checks for inadmissible characters present in the pointsegment
+       lines (the range of admissible chars can be defined in the config
+       file; by default as inadmissible are treated the chars with
+       ASCII-codes less than #33 and greather than #127);
+     - checks for segment lines having equal point number;
+     - finds strings without any flag, having no comma at the end;
+     - checks correspondence of the name of the segment with
+       the "Boss,*"-string, and also the correctness of the
+       "Boss,*"-string itself;
+     - checks for presence of CR/LF chars at the end of each segment string;
+     - subject to adjustments removes superfluous comment lines from the
+       segment (superfluous comments from the header and, if you want,
+       from the body of the segment);
+     - subject to adjustments can not only check the segments, but also
+       correct them, automaticaly correcting (deleting) invalid flags,
+       baud rate, phone number fields etc;
+     - creates message reports in *.MSG-format and addresses them to
+       the sender of the segment and (possibly) to the pointlist coordinator;
+     - performs many other tasks.
+
+     PNTCHK can easily be installed on you system. Versions of PNTCHK
+     for different OS (PNTCHK v.1.00+ is available for DOS16, DOS32, OS/2,
+     WIN32, Linux and FreeBSD) are completely identical in their call
+     and output, use the same format of the nodelist index, logfile, so
+     they can be used at the same time.
+
+     And one last thing:
+                    although PNTCHK isn't proclaimed a FreeWare product
+     and requires registration, there are no limitations in the
+     evaluation version of the software, and you can use it freely
+     provided that you are observing the rights of the author of
+     the software.
+
+
+     2.  Installation
+     --------------------------------------------------------------------
+
+     The PNTCHK distribution includes the following files:
+
+     PNTCHK.EXE   (101080 bytes) - dual-exe: DOS-version (Turbo Pascal, v7.0
+                                   (c) 1983,92 Borland International, Inc) +
+                                   OS/2-version 32 bit (Virtual Pascal,
+                                   v1.10 (c) 1996 fPrint UK Ltd)
+     PNTCHKP.EXE  (191488 bytes) - DOS32-version (FPC/go32, v1.0.4)
+     PNTCHKW.EXE  (145920 bytes) - Win32-version (FPC/WIN32, v1.0.4)
+                                 - FreeBSD 4.x & 5.x (FPC/FreeBSD):
+     PNTCHK_C.BSD (200204 bytes)    - color interface
+     PNTCHK_B.BSD (188716 bytes)    - black&white interface
+                                 - Linux-versions (FPC/Linux v1.0.4):
+     PNTCHK_C.LNX (205860 bytes)    - color interface
+     PNTCHK_B.LNX (194756 bytes)    - black&white interface
+     PNTCHK.CTL                  - configuration file
+     PNT_LITE.CTL                - configuration file for lite-version
+     PNTCHK.FAQ                  - frequently asked questions
+     PNTCHK.DOC                  - the manual
+     WHATSNEW.TXT                - history
+
+     PNTCHK can be installed into any directory of your harddisk.  By
+     default the executable file (PNTCHK.EXE, PNTCHKP.EXE etc) and the cfg
+     file PNTCHK.CTL have to be in the same directory (this can be changed
+     by using '-C' command line switch).
+
+     Before the first execution of PNTCHK you must create all working
+     directories (see below). The paths to the directories and other
+     adjustments must be set in the CTL file. That's all you have to do to
+     get a running version of PNTCHK.
+
+     If PNTCHK does not run in the way you expected, please read the
+     section "configuration" below.
+
+
+     2.1   Command line arguments
+     --------------------------------------------------------------------
+
+     PNTCHK understands a few command line arguments described here.
+     It always needs one of the following arguments:
+     - "-S" and the file name, optionally containing wildcard ("?" or "*")
+       This option defines the name(s) of the segment file(s) to be
+       checked.
+     - "-L"
+       By this PNTCHK starts compilation of pointlist from the
+       segments contained in the MASTER directory (see below);
+       the search for the segments PNTCHK performs without assistance.
+
+     The following argument can be given additionally:
+     - "-C" and file name (without space)
+       Defines the configuration file name, other than .\PNTCHK.CTL
+
+
+     3.  Configuration
+     --------------------------------------------------------------------
+
+     In PNTCHK there are some adjustments that are absolutely necessary
+     as well as some that are really only needed in some unusual cases.
+     If you want to change anything you first should know how PNTCHK
+     works.
+
+
+     3.1  How PNTCHK works
+     --------------------------------------------------------------------
+
+     The main part of PNTCHK is the module checking the validity of
+     incomming segments. It is executed both in "-S"-mode of PNTCHK
+     and when pointlist is being compiled ("-L"-mode), for every
+     segment to be included into the pointlist.
+     Thus almost all the rules applied when the segments are checked in
+     "-S"-mode are also applicable in the "-L"-mode.
+
+
+     3.1.1  The mode checking the validity of segments "-S".
+     --------------------------------------------------------------------
+
+     This mode is base in operation of the program. PNTCHK gets the name
+     of the segment (or segments if the willcard is given) for processing
+     from the command line. The name of the segment(s) can be both absolute
+     (concerning root directory), and relative (concerning the current
+     directory).
+
+     The name (the number) of the sender of a segment PNTCHK gets from
+     the name of the segment. How it is done depends on the value of
+     configuration variable SEGMENTFORMAT. Several formats are supported
+     at once. The zone and network numbers are got from the ADDRESS switch.
+
+     Further the nodelist is scanned. This unit is started only in the case
+     if the variable NODELIST refers to valid nodelist (if it is not commented
+     out and if the file to which refers NODELIST, exists). Depending on the
+     status of the bossnode in the nodelist (and appropriate customization of
+     variables ABSENDPOINTS, NORMALPOINTS, HUBPOINTS, HOLDPOINTS, DOWNPOINTS)
+     the segment will be or will not be processed. Nodelist is scanned and
+     its index file is created. In the further operation goes with this index
+     file until the nodelist vary. As the nodelist it is possible to set
+     both a local network segment, and zone and even world nodelist. In the
+     latter case search of an appropriate network segment will be made in
+     the body of nodelist.
+
+     First check of a segment as a whole is performed - check on valid age
+     of a segment (variables SEGWRNAGE and SEGERRAGE), on correctness of
+     layout of commentlines and their quantity (BETWEENCOMMENTS,
+     COMMENTCOUNT). After that the segment is read line by line and each
+     string is tested separately.
+
+     Before processing of a segment it is possible to copy it into
+     special back-up directory (set by variable BACKUPDIR).
+
+     At the end of operation, depending on whether errors in a segment were
+     found or not, the segment is transferred to the appropriate
+     directory. Warnings are not considered for errors. At absence
+     of errors the segment is considered correct and is transferred
+     into MASTER directory, otherwise is transferred to BAD directory
+     or is deleted (variable KILLBAD).
+
+     Checker dispatches the reports about its operation to the
+     remailer of a segment. In case of the retrieved errors (warnings) the
+     message-report on them is also sent. According to your desire the
+     error report can be carbon-copied to you (variable COORDINATOR in
+     the configuration file). Message reports are created in the *.MSG-format
+     in NETMAIL directory defined by you. Attributes of letters are set
+     by a configuration variable ATTRIBUTES.
+
+     At sending message reports template files are very widely used,
+     which you can edit to own taste, for example, translate them to
+     Russian. In template files it is possible to set macros,
+     which at sending the report will be replaced with value appropriate
+     to them at present.
+
+     Operation of PNTCHK is completed with various exit codes (errorlevels),
+     depending on presence of errors (see chapter 3.4 of the present
+     manual).
+
+
+     3.1.2  Pointlist compilation mode "-L".
+     --------------------------------------------------------------------
+
+     This mode requires no additional command line switches. By this PNTCHK
+     scans the MASTER directory and finds in increasing order the segments
+     corresponding the masks defined by SEGMENTFORMAT variables.
+     Every found segment is checked in the way depending on the
+     CREATIONCHECK variable (can be checked like in "-S"-mode or less
+     careful, see below). If the segment is correct, no report is sent
+     to the bossnode (unlike in "-S"-mode, where the report is sent in
+     any case). Only reports about errors (if any) are sent. The
+     template pntlst.tpl is used instead of error.tpl.
+
+
+     3.2    The configuration file
+     --------------------------------------------------------------------
+
+     In the configuration file (PNTCHK.CTL default) various parameters
+     are set that fix how the program works. This file can be edited with
+     any ASCII editor. Empty lines and lines beginning with a
+     semicolon (";") will be ignored. Maximum length of a string is
+     97 characters (16 characters per a variable and 80 characters for
+     its value).
+
+
+     3.2.1  Sample file
+     --------------------------------------------------------------------
+
+     [...]
+
+
+     3.2.2  System section
+     --------------------------------------------------------------------
+
+     3.2.2.1  Variable: ADDRESS
+     --------------------------------------------------------------------
+
+     Syntax: ADDRESS <zone>:<net>/<node>[.<point>]
+
+     This variable defines the address of your system. This is one
+     of the most important variables, the value of which is used in
+     several ways:
+     - as the address of the sender of the outgoing report-messages;
+     - the host part of it is used by nodelist processing routine,
+       and when checking the strings "Boss,*" in the segments.
+
+
+     3.2.2.2  Variable: NETMAIL
+     --------------------------------------------------------------------
+
+     Syntax: NETMAIL [<path>\]<directory>
+
+     This variable defines the path to your netmail-directory, where
+     message reports are created.
+
+     You can define both absolute, and relative path to the directory,
+     including beginning with "\" (root directory).
+
+     Examples: NETMAIL C:\MAIL\NETMAIL\
+                       NETMAIL .\MAIL
+                       NETMAIL MSGS
+                       NETMAIL \MAIl\MSG\
+
+     If not defined, no reports will be sent.
+
+
+     3.2.2.3  Variable: MASTER
+     --------------------------------------------------------------------
+
+     Syntax: MASTER [<path>\]<directory>
+
+     This variable defines the path to the so called MASTER directory.
+
+     The MASTER directory is the place where correct segments are placed.
+     It is used in two situations. First of all, in the "-S"-mode of
+     PNTCHK here are moved correct segments after checks. Second, in the
+     "-L"-mode this directory is scanned for segments to be included
+     into new pointlist.
+
+     As in case of NETMAIL directory, you can define both absolute, and
+     relative path to the directory, including beginning with "\" (root
+     directory).
+
+     See the examples to NETMAIL variable.
+
+     Preset: . (current directory: the segment is not moved)
+
+
+     3.2.2.4  Variable: BADFILES
+     --------------------------------------------------------------------
+
+     Syntax: BADFILES [<path>\]<directory>
+
+     This variable defines the path and the name of the directory, where
+     incorrect segments are placed.
+
+     See the examples to NETMAIL variable.
+
+     Preset: . (current directory: the segment is not moved)
+
+     Also see the KILLBAD variable (below).
+
+
+     3.2.2.5  Variable: BACKUPDIR
+     --------------------------------------------------------------------
+
+     Syntax: BACKUPDIR [<path>\]<directory>
+
+     Sometimes it is useful to save the copy of incomming segment before
+     it is checked by PNTCHK. During the process of checking the segment
+     can be modified (eg., superfluous comment lines are removed,
+     incorrect values of SYSOP, BAUD, LOCATION etc. fields are changed
+     (see COMMENTCOUNT, CHANGELOCATION, CHANGESYSOP etc. variablees, below)),
+     but due to incorrect config adjustments or due to system crash can
+     be not as expected.
+
+     Although the real possibility of such abnormal situation is quite
+     low, you can always safe yourself by defining BACKUPDIR variable.
+     The segments will be copied into BACKUPDIR both in the "-S"-mode
+     and in the "-L"-mode (when variable CREATIONCHECK=FULL, see below).
+
+     See the examples to NETMAIL variable.
+
+     When not defined, the segments are not saved.
+
+
+     3.2.2.6  Variable: TEMPDIR
+     --------------------------------------------------------------------
+
+     Syntax: TEMPDIR [<path>\]<directory>
+
+     Working directory, needed by PNTCHK to place there temporary files.
+
+     If after crash in this directory some temporary files are
+     left, they can be used to recover lost data. If the crash caused
+     by the bug in the PNTCHK itself, include the description of
+     left temporary files into the bugreport.
+
+     See the examples to NETMAIL variable.
+
+     Preset: . (current directory)
+
+
+     3.2.2.7  Variable: TEMPLATEPATH
+     --------------------------------------------------------------------
+
+     Syntax: TEMPLATEPATH [<path>\]<directory>
+
+     This variable sets the path where allocate file templates for
+     message reports of checker. The given directory is set parallelly
+     to the current, that is the template files indicated without path or
+     indicated with relative path, are searched in the current directory
+     and in the directory set by TEMPLATEPATH.
+     You always can reassign path to concrete template, having set its name
+     with absolute path.
+
+     Examples see in the description to variable NETMAIL.
+
+     Preset:. (the current directory)
+
+
+     3.2.2.8  Variable: LOGFILE
+     --------------------------------------------------------------------
+
+     Syntax: LOGFILE [<path>\]<filename>
+
+     The given variable allows to set a name of the logfile in
+     which checker writes the report on made operations. If the path is not
+     given, the file is created in the current directory.
+
+     An example of usage: LOGFILE F:\MAIL\LOGS\mylog.txt
+
+     Preset: PNTCHK.LOG
+
+
+     3.2.2.9  Variable: LOGLEVEL
+     --------------------------------------------------------------------
+
+     Syntax: LOGLEVEL <tag>[<tag>[<tag>[<tag>...]]]
+
+     Each message in the logfile starts with the defined character - tag.
+     Tags are separated into groups on semantic load:
+
+       + - the configuration information, parameters of the command line
+       @ - current messages (on opening files, copying etc)
+       & - operation with nodelist file
+       [ - operation with template files
+       # - detected errors in the segment
+       { - operation with netmail
+       <,> - carry of the segment
+       | - other
+
+     You can prohibit output of the defined groups of messages in
+     the logfile. For this purpose it is simple enough to specify tags
+     of appropriate groups in the variable LOGLEVEL.
+
+     An example of usage: LOGLEVEL @|[
+
+     Default value: no tags
+
+
+     3.2.2.10  Variable: SHARINGMODE
+     --------------------------------------------------------------------
+
+     Variable: SHARINGMODE YES | NO
+
+     This variable determines the way of addition of messages in the
+     logfile. By default addition of messages is made through the buffer
+     after its filling, that accelerates operation of the program
+     a little, and also reduces number of disk operations. However it
+     results to that in case of failure the part of messages appears
+     lost.
+     You can change a way of addition of messages in the logfile, having
+     specified the program to close the logfile after each added
+     line (having set the value of SHARINGMODE to YES).
+
+     Default value: NO
+
+
+     3.2.2.11  Variable: LITE
+     --------------------------------------------------------------------
+
+     Syntax: LITE YES | NO
+
+     Variable switches on so called lite-mode of PNTCHK, which serves
+     the local check of the pointlist segment before sending it to the
+     coordinator.
+
+     For more details, see the chapter 5 of this manual.
+
+     Example of usage: LITE YES
+
+     Default value: NO
+
+
+     3.2.3  Message settings
+     --------------------------------------------------------------------
+
+     3.2.3.1  Variable: FROM
+     --------------------------------------------------------------------
+
+     Syntax: FROM <fromname>
+
+     Name of the remailer of message reports. Direct indication, and usage
+     of macros (see bellow) are both allowed.
+
+     Examples of usage: FROM Pavel Osi‡ov
+                        FROM @owner
+                        FROM @name‡rog, v@version
+
+     Default value: @name‡rog 
+
+
+     3.2.3.2  Variable: TO
+     --------------------------------------------------------------------
+
+     Syntax: TO <toname>
+
+     Name of the receiver of message reports.
+ 
+     Example: TO @FirstSysO‡Name @LastSysO‡Name
+
+     Default value: SysO‡
+
+
+     3.2.3.3  Variable: SUBJECT
+     --------------------------------------------------------------------
+
+     Syntax: SUBJECT <subject>
+
+     The subject of message reports.
+
+     Example: SUBJECT segment: @segname, @seglength bytes, dated @segdate
+
+     Defaule value: @nameprog report
+
+
+     3.2.3.4  Variable: TEARLINE
+     --------------------------------------------------------------------
+
+     Syntax: TEARLINE <tearline>
+
+     Tearline of message reports.
+
+     Example: TEARLINE @nameprog, R: @owner (@serial)
+
+     By default empty.
+
+
+     3.2.3.5  Variable: ORIGIN
+     --------------------------------------------------------------------
+
+     Syntax: ORIGIN <origin>
+
+     Origin of message reports.
+
+     By default empty.
+
+
+     3.2.3.6  Variable: ATTRIBUTES
+     --------------------------------------------------------------------
+
+     Syntax: ATTRIBUTES <attr> [<attr> [<attr> [<attr> ...]]]
+
+     This variable allows to set attributes of the report messages. All
+     attributes hardly will be necessary for you, except for the most
+     widespread (PVT, LOC, K/S), nevertheless PNTCHK allows to define
+     almost all possible attributes.
+
+     Possible attributes are:
+
+     PVT - ‡rivat, the letter is private (standard attribute
+           for netmail-messages)
+     CRA - crash, urgent letter
+     RCV - received, the letter is obtained
+     SNT - sent, the letter is transmitted
+     ATT - attach, the letter contains file attached to it
+     TRS - transit, transit letter
+     ORP - orphan, erratic letter
+     K/S - kill/sent, delete the letter after sending
+     LOC - local, the letter is local
+     HLD - hold, to hold back the letter until the receiver takes away it
+           from our system
+     FRQ - freq, the letter contains file request
+     RRQ - return receipt request, request about obtaining of
+           the notice on delivery
+     RRC - return receipt, the letter is the notice on delivery
+     ARQ - audit request, request about passing of the letter through
+           transit sites
+     URQ - file update request, request of the refreshed version of the
+           file
+
+     Default: PVT LOC 
+
+
+     3.2.3.7  Variable: ONLYONEREPORT
+     --------------------------------------------------------------------
+
+     Syntax: ONLYONEREPORT YES | NO
+
+     After check of a segment in the '-S'-mode the checker dispatches the
+     report on the done operation. The report can consist of one or two
+     letters. The former letter is the general report about the done
+     operation (the content is got from NORMALTEMPLATE). The latter contains
+     the report on errors if they are available (ERRORTEMPLATE).
+     However, if such situation with reports does not arrange you, you
+     can set value of ONLYONEREPORT in YES, therefore checker always will
+     dispatch only one message report: NORMALTEMPLATE in case of correct
+     segment, and ERRORTEMPLATE (and only it) in case of detection of
+     errors in the segment.
+
+     An example: ONLYONEREPORT YES
+
+     Default: NO
+
+
+     3.2.3.8  Variable: COORDINATOR
+     --------------------------------------------------------------------
+
+     Syntax: COORDINATOR <address> [<Coordinator's name>]
+
+     The address and the name (if not defined, "Coordinator" is used) of
+     receiver of copies of the error messages, sent to segments remailers.
+
+     By default backup of messages does not occur.
+
+
+     3.2.4  Nodelist settings
+     --------------------------------------------------------------------
+
+     In this section operation of the checker with nodelist is defined -
+     its name and its place, the name of the nodelist index, segments of
+     nodes with what status should be included in the nodelist, and whether
+     it is necessary in general to check the nodelist.
+
+
+     3.2.4.1  Variable: NODELIST
+     --------------------------------------------------------------------
+
+     Syntax: NODELIST [<path>\]<filename>.<extension>
+
+     This variable defines the path and the name of the nodelist. It is
+     possible to specify a direct name of the concrete file ord to specify
+     a mask according to which the search for available nodelist is performed. 
+
+     The mask is allowed only in the extension and only of two types:
+       * - search of the nodelist any extension, both with digital, and
+           with text will be made.
+           If the directory contains some nodelist files with the names
+           matching the search criteria, the nodelist with the last date
+           of creation will be taken.
+           WARNING! Be careful! Check on the nodelist file for its
+           "quality" is not made. The situation when in the nodelist
+           directory there is the archived nodelist file having later date
+           of creation (eg., you have created the nodelist, and then have
+           packed it with the same name) is quite possible.
+           The checker will try to process this archive file, and,
+           naturally, will produce an error. It is necessary for you
+           to take care of inadmissibility of occurrence of such situation.
+
+      999 - such extension is a mask, i.e. will be searched not only
+           nodelist file with .999 extension (I think, it is not so terrible
+           for hardly someone will have necessity of storage and the more
+           so processings nodelist with such name). In this case it will be
+           searched for nodelist file containing in the extension only
+           digits. That is NODELIST.103 will be processed, but N5020.NDL
+           and NODELIST.13A not.
+
+     Examples of usage: NODELIST net5020.ndl
+                        NODELIST z2-list.192
+                        NODELIST c:\mail\brake\nodelist\nodelist.999
+                        NODELIST ndl5020.*
+
+     If variable NODELIST is not defined, search for nodelist and check
+     on existence of the bossnode is not performed.
+
+
+     3.2.4.2  Variable: NDLINDEX
+     --------------------------------------------------------------------
+
+     Syntax: NDLINDEX [<path>\]<filename>
+
+     This variable defines the filename of nodelist index. If a new
+     nodelist is detected, its index is compiled in the file defined
+     by NDLINDEX variable. In the further operation goes only with the index,
+     that essentially accelerates operation with the nodelist, and its
+     recompillance occurs only at appearance of a new nodelist.
+
+     WARNING!!! Be cautious and ... watch that the name of the index
+     not coincided with a name of the nodelist. Consequences can be
+     unpredictable.
+
+     Example of usage: NDLINDEX PNTCHECK.NDL
+
+     Default value: PNTCHK.NDL
+
+
+     3.2.4.3  Variables: ABSENTPOINTS, DOWNPOINTS, HOLDPOINTS,
+                        HUBPOINTS, NORMALPOINTS, PVTPOINTS
+     --------------------------------------------------------------------
+
+     Syntax: ABSENTPOINTS YES | NO | NOSEND
+             DOWNPOINTS YES | NO | NOSEND
+             HOLDPOINTS YES | NO | NOSEND
+             HUBPOINTS YES | NO | NOSEND
+             NORMALPOINTS YES | NO | NOSEND
+             PVTPOINTS YES | NO | NOSEND
+
+     This variablees determine the status of nodes, the segments of which
+     should be included into the pointlist. That is for segments of each
+     group of bossnodes it is possible to resolve or prohibit entry in
+     pointlist.
+     Such groups are:
+        HUB - hub
+        NORMAL - ordinary node
+        PVT - privat node (PVT prefix)
+        HOLD - node with HOLD prefix
+        DOWN - node with DOWN prefix
+        ABSENT - node absent in the nodelist
+
+     Thus, you can eliminate from the pointlist segments, for example, of
+     absent nodes and nodes with status HOLD and DOWN, or, on the contrary,
+     to create pointlist only from segments of hubs.
+
+     The values NO and NOSEND are identical in their functioning with one
+     exception: in the former case the remailer of the segment will
+     receive a report message from checker concerning the problem with
+     his segment. In the latter case the segment is rejected silently.
+
+     Example of usage: ABSENTPOINTS NOSEND
+                       DOWNPOINTS NOSEND
+                       HOLDPOINTS NO
+                       HUBPOINTS YES
+                       NORMALPOINTS YES
+                       PVTPOINTS YES
+
+     Defaults: to include into pointlist segments of all nodes
+               (all variablees in YES)
+
+
+     3.2.5  General segment check variablees
+     --------------------------------------------------------------------
+
+     3.2.5.1  Variable: SEGMENTFORMAT
+     --------------------------------------------------------------------
+
+     Syntax: SEGMENTFORMAT (<?>|~D|~H)(<?>|~D|~H)...(<?>|~D|~H)
+
+     Syntax: SEGMENTFORMAT (<?>|~D|~H)(<?>|~D|~H)...(<?>|~D|~H)
+
+     This variable sets the format (mask) of a segment transmitted to
+     the program, that is actually in what place of the name of the segment
+     to search for the digital combination having the number of the
+     node - sender of the segment. Value SEGMENTFORMAT consists of
+     combinations of characters, each of which corresponds to one
+     character of the name of the segment. The number of combinations of a
+     mask and characters of a name of a segment should be equal. To the given
+     combinations of characters concern:
+
+     <any_char> - any character; this character is not significant for the
+          program and is put only to determine real location of the
+          following behind it of significant combinations. Hence, 
+          'A characters, 'B', '?' in a mask are handled absolutely
+          equally (as against a mask, e.g., in variables LOCATION, FLAGS
+          etc) and mean " on this place there can be ANY CHARACTER ".
+     ~D - the given combination is significant and determines location
+          of decimal digit (0. 9), i.e. " On this place there can be any
+          decimal digit which then is used for calculation of the address
+          of the remailer of a segment "
+     ~H - the given combination determines location of sexadecimal
+          digit (0. F)
+
+     Calculation of the address is made on formation rules decimal numbers,
+     i.e., having X X X X X X X X X X X, we receive
+     result X1 + 10*X2 + 100*X3 + 1000*X4 +... + 10000000000*X11
+     This rule operates both in the ratio to decimal, and in the ratio to
+     sexadecimal numbers, i.e. expression ~H~H~H at all does not mean
+     three-value sexadecimal number, and means a decimal number, obtained
+     addition of the bits multiplied on 10 in appropriate degree, let even
+     bit and contains sexadecimal digit. E.g., a name of segment PAV33A78.TXT
+     at mask? A % ~ H~H~H~H~H.*C! It will be recognized as
+     8*1 + 7*10 + 10*100 + 3*1000 + + 3*10000 = 34078, 
+     at mask? A % ~ D~D~D~D~D.*C! The error message will be obtained.
+
+     You can define up to 10 variables SEGMENTFORMAT specifying different
+     formats of a name of a segment.
+
+     The note: the rule about equality of processing of combinations " any
+     character " has one exception: if value RENAMESEGMENT (see below)
+     equally YES. In this case in value of the _FIRST_ SEGMENTFORMAT should
+     not contain the illegal characters prohibited OS for a name of a
+     segment. Otherwise renaming of a segment becomes impossible.
+
+     Examples of usage:
+       SEGMENTFORMAT SEG~D~D~D~D~D.PNT
+       SEGMENTFORMAT MOPOINTS.~H~D~D
+       SEGMENTFORMAT ????????.~H~D~D  (the last two variants are absolutely
+                                      identical in processing)
+
+     The default is impossible (for operation checker one variable
+     SEGMENTFORMAT) should be given even.
+
+
+     3.2.5.2  Variable: RENAMESEGMENT
+     --------------------------------------------------------------------
+
+     Syntax: RENAMESEGMENT YES | NO
+
+     The variable determines, whether it is necessary to put all names
+     of the segments stored in base (in MASTER directory) into one format,
+     if there are several formats defined (several variablees SEGMENTFORMAT
+     defined). The segments are renamed to to the format defined by the
+     first SEGMENTFORMAT variable.
+
+     An example of usage: RENAMESEGMENT YES
+
+     Default: NO
+
+
+     3.2.5.3  Variable: KILLBAD
+     --------------------------------------------------------------------
+
+     Syntax: KILLBAD ALWAYS | YES | IFGOOD | NEVER | NO
+
+     This variable determines the reaction of the program to segments
+     containing errors. First, it determines, whether it is necessary to
+     transfer incorrect segments into defined by BADFILES variable (see
+     above) directory. Second, KILLBAD determines, whether it is
+     necessary to search for and delete of old incorrect segments
+     in case of obtaining a correct segment from the given bossnode.
+     
+     At obtaining an incorrect segment its further destiny is defined
+     with value KILLBAD. If it is equal ALWAYS (synonym YES) the segment
+     after processing will be simply deleted and will not be transferred
+     anywhere. Otherwise the segment will be transferred in the directory
+     defined by BADFILES, or remain in the current directory if the value
+     of BADFILES is not defined.
+
+     At obtaining a correct segment possibility of deleting of old
+     incorrect segments can be included. Such deleting is made, if value
+     KILLBAD is equal ALWAYS (YES) or IFGOOD. The new segment is transferred
+     in MASTER then BADFILES is scanned and all retrieved old segments from
+     the given bossnode are deleted.
+     Comment: the segment, as a rule, will be one (or there will be no
+     segment at all). Nevertheless hypothetically in BADFILES there can
+     be several segments from one bossnode, satisfying miscellaneous
+     SEGMENTFORMAT (the description of variable SEGMENTFORMAT see below).
+     Such can take place, for example, on change of the format of sending
+     segments in the network on solution of the coordinator or if in the
+     network several formats are are officially supported and sysops
+     themselves select, in what format to send segments. In any case
+     PNTCHK provides such case, all old segments from the given bossnode,
+     satisfying all SEGMENTFORMAT therefore will be removed.
+
+     So, as the resume we shall mark, that three variants of behaviour of
+     the program in the ratio to incorrect segments exist:
+         ALWAYS or YES (synonyms) - to kill bad segments at their
+             processing and to not transfer them to BADFILES
+             directory,
+             at obtaining a correct segment to scan and clean BADFILES
+         IFGOOD - to transfer incorrect segments into BADFILES,
+             at obtaining a correct segment to clean BADFILES
+         NEVER (NO) - to transfer incorrect segments into BADFILES;
+             at obtaining a correct segment not to clean BADFILES
+
+     Examples of usage: KILLBAD ALWAYS
+                        KILLBAD NO
+
+     Default: NO
+
+
+     3.2.5.4  Variable: SEGWRNAGE
+     --------------------------------------------------------------------
+
+     Syntax: SEGWRNAGE <age_in_days>
+
+     The variable sets valid age of a segment (in days) at which
+     exceeding to the remailer of a segment the reminder on necessity to
+     resend the segment will be dispatched (template of the reminder is
+     defined by AGEWRNTPL).
+
+     Example of usage: SEGWRNAGE 365
+
+     By default check is not performed.
+
+
+     3.2.5.5  Variable: SEGERRAGE
+     --------------------------------------------------------------------
+
+     Syntax: SEGERRAGE <age_in_days>
+
+     The variable sets valid age of a segment (in days) at which exceeding
+     the segment is considered erratic and is not handled. The report template
+     is set by AGEERRTPL variable.
+
+     Example of usage: SEGERRAGE 730
+
+     By default check is not done.
+
+
+     3.2.5.6  Variable: TOUCHSEGMENTS
+     --------------------------------------------------------------------
+
+     Syntax: TOUCHSEGMENTS YES | NO
+
+     Variable determines, whether to change the date of incomming
+     segments to the current on receiving of them.
+     This variable influences to the process of the check for valid age
+     of the segments (variables SEGWRNAGE ® SEGERRAGE), setting the moment
+     since which the age of the segments should be calculated:
+     NO  - the date of the segment is not changed and, accordingly, the
+           age of it is calculated since the moment of its creation at
+           the node-sender,
+     YES - the date of the segment is changed to the current and in the
+           future the age of the segment is calculted from this point
+           during checks
+
+     Example of usage: TOUCHSEGMENTS YES
+
+     Default value: NO
+
+
+     3.2.5.7  Variable: COMMENTCOUNT
+     --------------------------------------------------------------------
+
+     Syntax: COMMENTCOUNT <count>
+
+     Maximum number of lines of the segment containing the comments. At
+     exceeding valid number PNTCHK cuts superfluous lines with comments
+     with sending appropriate warning to the remailer of a segment.
+
+     Example of usage: COMMENTCOUNT 5
+
+     Default: 5
+
+
+     3.2.5.8  Variable: BETWEENCOMMENTS
+     --------------------------------------------------------------------
+
+     Syntax: BETWEENCOMMENTS YES | NO
+
+     The variable determines, whether comments not only in the beginning of
+     a segment, but also between data lines are admitted. Even in case of
+     the value set to YES, the total number of lines with comments (variable
+     COMMENTCOUNT) all the same is checked.
+
+     WARNING!!! If value is YES, do not overlook to correct CMNTERRTPL in
+     appropriate way.
+
+     Example of usage: BETWEENCOMMENTS NO
+
+     Default: NO
+
+
+     3.2.6  Proceeding of strings in segment
+     --------------------------------------------------------------------
+
+     3.2.6.1  Variable: ADMISSIBLECHARS
+     --------------------------------------------------------------------
+
+     Syntax: ADMISSIBLECHARS <char>[ <char>[ ...] | \[<char>-<char>\]]
+
+     This variable defines correct chars for pointlist strings. Chars or
+     ranges of chars (in square brackets) are listed with space separator.
+
+     Example of usage: ADMISSIBLECHARS [!-] [Ä-Ø] ‡ · [‚„‰ÂÊÁ] [Ë-Ô]
+
+     Default value: [!-]
+
+
+     3.2.6.2  Variable: CHECKCOMMENTS
+     --------------------------------------------------------------------
+
+     Syntax: CHECKCOMMENTS YES | NO
+
+     This variable switches on the check on the comment lines for
+     inadmissible characters (as inadmissible in the comment lines are
+     treated so called "control characters" - the chars with the codes
+     below #32).
+     I recommend to switch this check on since the presence in the lines
+     of the pointlist of control characters may lead to errors during
+     their processing by the diff-processors and nodelist-compilers.
+
+     Example of usage: CHECKCOMMENTS NO
+
+     Default value: YES
+
+
+     3.2.6.3  Variable: NODELIFECOMPAT
+     --------------------------------------------------------------------
+
+     Syntax: NODELIFECOMPAT YES | NO
+
+     The variable switches on the compatibility mode with the popular
+     diff-processor Nodelife, prohibiting comment lines, containing
+     the character string ";`", which is inproperly processed by this
+     diff-processor.
+     Although the technical standarts do not provide for the ban of the
+     above mentioned character string, I introduced such a variable by
+     numerous requests of PNTCHK users due to wide distribution of
+     Nodelife.
+
+     Example of usage: NODELIFECOMPAT YES
+
+     Default value: NO
+
+
+     3.2.6.4  Variable: PREFIX
+     --------------------------------------------------------------------
+
+     Syntax: PREFIX <prefix> | @
+
+     The variable allows to change the value of admissible Point-prefix
+     of the pointlist line. To define an empty prefix use the mask @.
+
+     Examples of usage: PREFIX Point
+                        PREFIX @
+
+     Default value: Point
+
+
+     3.2.6.5  Variable: BAUD
+     --------------------------------------------------------------------
+
+     Syntax: BAUD <baud> [<baud> [<baud> ...]]
+
+     Correct values for "modem speed" field.
+
+     Example of usage: BAUD 9600 14400 21600 33600
+
+     Default value: 300 1200 2400 9600
+
+
+     3.2.6.6  Variable: LOCATION
+     --------------------------------------------------------------------
+
+     Syntax: LOCATION <location>
+
+     Correct values for "system location" field. You may use masks here.
+
+     You may define up to 255 LOCATION variables, defining different valid
+     formats for system locations.
+
+     Example of usage: LOCATION Moscow
+                       LOCATION * !*[Hh][Oo][Ll][Ee]* !@
+
+     Default value: "!*"
+
+
+     3.2.6.7  Variable: PHONENUMBER
+     --------------------------------------------------------------------
+
+     Syntax: PHONENUMBER <number>
+
+     Correct values for "phonenumber" field. You may use masks here.
+
+     You may define up to 10 PHONENUMBER variables, defining different valid
+     formats for telephone numbers.
+
+     Example of usage: PHONENUMBER -Unpublished-
+                       PHONENUMBER 7-095-???-????
+
+     Default value: "-Unpublished-"
+
+
+     3.2.6.8  Variable: SYSOP
+     --------------------------------------------------------------------
+
+     Syntax: SYSOP <SysOp_name>
+
+     Correct values for "SysOp name" field. You may use masks here.
+
+     You may define up to 20 SYSOP variables, defining different valid
+     formats for system operator's name.
+
+     Example of usage: SYSOP * !@
+                       SYSOP * !*[Nn][Oo]_[Nn][Aa][Mm][Ee]*
+
+     Default value: "*"
+
+
+     3.2.6.9  Variable: SYSTEM
+     --------------------------------------------------------------------
+
+     Syntax: SYSTEM <system_name>
+
+     Valid values of a field "system name". Masks can be used.
+
+     You can define up to 20 variables, specifying different valid formats
+     of system names.
+
+     Examples of usage: SYSTEM * !@
+                        SYSTEM * !*[Nn][Oo]_[Nn][Aa][Mm][Ee]*
+
+     Default value: "!*"
+
+
+
+     3.2.6.10  Variable: FLAGS
+     --------------------------------------------------------------------
+
+     Syntax: FLAGS <flag> [<flag> [<flag> ...]]
+
+     Valid values of flag fields.
+     For definition of so called "user-flag (",UFLAG" or ",U,FLAG") you
+     should include value without comma: "UFLAG". Checker will recognize
+     such user flag and will track it in the segment, whether it is given in 
+     "UFLAG,UFLAG" format, or "U,FLAG,FLAG".
+
+     You can define up to 30 FLAGS variables. Regular expressions are
+     allowed. For "!xx" flag use "!!xx" combination.
+
+     Example of usage: FLAGS CM MO LO
+                       FLAGS #01 #02 #08 #09 #18 #20
+                       FLAGS !!01 !!02 !!08 !!09 !!18 !!20
+                       FLAGS IBN IBN:[0-9] IBN:[1-9][0-9] IBN:[1-9][0-9][0-9] 
+                       FLAGS EVY EMA EVY:* EMA:*
+                       FLAGS URPK UNPK
+                       FLAGS UT[A-X][A-X] UT[A-X][a-x] UT[a-x][A-X] UT[a-x][a-x]
+
+
+     Default value: "*"
+
+
+     3.2.6.11  Variable: IMPLIES
+     --------------------------------------------------------------------
+
+     Syntax: IMPLIES <flag> = <flag> [<flag> [<flag> ...]]
+
+     Variables IMPLIES allow to define flags, which ØÆ§‡†ß„¨•¢†Ó‚
+     inclusion in them some other flags and thus avoid neccessity of
+     defining of them in the segment string (eg., flag MNP is implied by
+     V42B flag).
+
+     Values of variables IPMLIES form constructions, devided by "equal"
+     sign, where in the left part of ‡†¢•≠·‚¢† the flag is defined, which
+     includes flag or flags from the right part of ‡†¢•≠·‚¢†.
+
+     You can define up to 30 variables IMPLIES. Regular expressions are
+     admitted.
+
+     Examples of usage: IMPLIES V32B = V32
+                        IMPLIES V42B = V42 MNP
+
+     Default value: no implies.
+
+
+     3.2.6.12  Variable: UPPERCASEFLAGS
+     --------------------------------------------------------------------
+
+     Syntax: UPPERCASEFLAGS YES | NO
+
+     This variable determines the case (capital or lower case letters),
+     admitted for flags in the segment. If UPPERCASEFLAGS=YES, flags in
+     lower case are admitted in the segment. Before their processing
+     (check for admissibility, check for implition into other flags)
+     PNTCHK will uppercase them, so the flags eg. v32b and V32B will be
+     identical for the checker. Otherwise (UPPERCASEFLAGS=NO) the flag in
+     the lower case will not be admitted.
+
+     Default value: NO
+
+
+     3.2.7  Settings for autocorrection of errors in segments
+     --------------------------------------------------------------------
+
+     3.2.7.1  Variable: REMOVEEMPTYLINES
+     --------------------------------------------------------------------
+
+     Syntax: REMOVEEMPTYLINES YES | NO
+
+     The variable determines behaviour of the ckecker at detection in a
+     segment of empty lines (consisting only from CR/LF (or LF if
+     READUNIXLINES is switched on)). If value of the variable is set to
+     YES, the empty line (with sending of the appropriate warning to the
+     bossnode of the segment) will be removed, but the segment will be
+     processed normally; if the value is set to NO the message on a mistake
+     will be sent to the bossnode and a segment will not be processed.
+
+     WARNING!!! Watch value of variable EMPTYLINETPL: it should contain
+     the reference whether on template with the warning or on template with
+     the message on a mistake - depending on value of REMOVEEMPTYLINES.
+
+     Value by default: NO 
+
+
+     3.2.7.2  Variable: READUNIXLINES
+     --------------------------------------------------------------------
+
+     Switch: READUNIXLINES YES | NO
+
+     Variable READUNIXLINES determines behaviour of the checker at
+     detection unix-style lines (not terminating on CR/LF):
+     NO - all as earlier, works standard Pascal readln (in the
+          DOS/OS2-version a line ending with lf will be not rcognized,
+          FPC-versions recognize these lines automatically)
+     SILENT - silently process lines as though they come to an end on
+          CR/LF (in FPC-versions similarly READUNIXLINES=NO)
+     WARNING - to process lines but to give out warning (template
+          UNIXLINETPL)
+     ERROR - to give out a mistake (template UNIXLINETPL), and reject the
+          segment
+
+     WARNING!!! In case of READUNIXLINES=WARNING or ERROR do not overlook
+     to correct in appropriate way value of variable UNIXLINETPL: it should
+     contain the reference wheter on the template with the warning message or
+     on template with the message on a mistake. 
+
+     Value by default: NO
+
+
+     3.2.7.3  Variable: CHANGEBAUD
+     --------------------------------------------------------------------
+
+     Syntax: CHANGEBAUD YES | NO
+
+     Allows to change work of checker in case of detection of a mistake in
+     a field "Baud_rate" in a pointsegment line.
+     If CHANGEBAUD=YES, erroneous value of a field "Baud_rate" will be
+     replaced with the first value of variable BAUD. Thus to the sender
+     a warning message is sent, but a segment is considered as correct.
+     At CHANGEBAUD=NO the error message is sent and the segmentis considered
+     erroneous. 
+
+     The PNTCHK distribution includes example templates baudwrn.tpl and
+     bauderr.tpl (defined by BAUDERRORTPL).
+
+     Value by default: NO
+
+
+     3.2.7.4  Variable: CHANGELOCATION
+     --------------------------------------------------------------------
+
+     Syntax: CHANGELOCATION YES | NO
+
+     Allows to change work of checker in case of detection of a mistake in
+     a field "Location" in a pointsegment line.
+     If CHANGELOCATION=YES, erroneous value of a field "Location" will be
+     replaced with the first value of variable BAUD. Thus to the sender
+     a warning message is sent, but a segment is considered as correct.
+     At CHANGELOCATION=NO the error message is sent and the segmentis considered
+     erroneous. 
+
+     The PNTCHK distribution includes example templates
+     locatwrn.tpl and locaterr.tpl (defined by LOCATERRORTPL).
+
+
+     Value by default: NO
+
+
+     3.2.7.5  Variable: CHANGESYSOP
+     --------------------------------------------------------------------
+
+     Syntax: CHANGESYSOP YES | NO | WARN
+
+     Defines scenario for checker operation in case of an invalid value
+     in the "System_operator's_name" field.
+
+     CHANGESYSOP=YES: an invalid value in "SysOp" field will be replaced
+     with the first value of the SYSOP variable. In this case sender
+     will be issued a warning but the segment itself is considered to
+     be correct. 
+     CHANGESYSOP=NO: an error message is produced and the segment is
+     considered to be invalid.
+     CHANGESYSOP=WARN: a warning is issued but the segment is processed as
+     it is.
+
+     The PNTCHK distribution contains templates sysoperr.tpl, sysopwrn.tpl,
+     sysopwr2.tpl (defined in SYSOPERRTPL variable).
+
+     Default option: WARN
+
+
+     3.2.7.6  Variable: CHANGESYSTEM
+     --------------------------------------------------------------------
+
+     Syntax: CHANGESYSTEM YES | NO | WARN
+
+     Defines scenario for checker operation in case of an invalid value
+     in the "System_name" field.
+
+     CHANGESYSTEM=YES: an invalid value in "System" field will be replaced
+     with the first value of the SYSTEM variable. In this case sender
+     will be issued a warning but the segment itself is considered to
+     be correct. 
+     CHANGESYSTEM=NO: an error message is produced and the segment is
+     considered to be invalid.
+     CHANGESYSTEM=WARN: a warning is issued but the segment is processed as
+     it is.
+
+     The PNTCHK distribution contains templates systerr.tpl, systwrn.tpl,
+     systwrn2.tpl (defined in SYSTEMERRTPL variable).
+
+     Default option: WARN
+
+
+     3.2.7.7  Variable: CHANGEPHONE
+     --------------------------------------------------------------------
+
+     Syntax: CHANGEPHONE YES | NO
+
+     Defines scenario for checker operation in case of an invalid value
+     in the "Phone" field.
+     CHANGEPHONE=YES: an invalid value in "Phone" field will be replaced
+     with the first value of the PHONE variable. In this case sender
+     will be issued a warning but the segment itself is considered to
+     be correct. 
+     CHANGEPHONE=NO:  an error message is produced and the segment is
+     considered to be invalid.
+
+     The PNTCHK distribution contains example templates phonewrn.tpl and
+     phoneerr.tpl (defined in PHONEERRORTPL variable).
+
+     Default option: NO
+
+
+     3.2.7.8  Variable: REMOVEBADFLAGS
+     --------------------------------------------------------------------
+
+     Syntax: REMOVEBADFLAGS YES | NO
+
+     The variable defines if an invalid flag should be removed, issuing
+     only a warning message (YES option), instead of an error message (NO
+     option) in case of an invalid flag detection.
+
+     Invalid flag definition:
+        a) unknown flag (not defined by FLAGS variable in the configuration
+           file);
+        b) the same flag is detected twice in the same entry;
+        c) flag is "implied" by one of the other flags in the entry
+           (variables IMPLIES).
+
+     ATTENTION!!!  FLAGERRTPL, IMPLERRTPL and DUPFLGERRTPL should be
+     modified appropriately
+
+     Default: NO
+
+
+     3.2.7.9  Variable: NOFLAG
+     --------------------------------------------------------------------
+
+     Syntax: NOFLAG YES | NO | ADD
+
+     The variable defines if the flagless pointlist entries should be
+     permitted.
+     If NOFLAG=YES the line end with "<baud_rate>," according to the
+     standards.
+     If NOFLAGD in case of detecting the line an entry with no flags PNTCHK
+     will automatically add one flag at the end of the entry. The added flag
+     depends on the value of the <baud_rate> field in a give pointlist
+     entry according to the default configuration or the values stored
+     in ADDEDFLAGS variable.
+     If NOFLAG=NO entries with no flags are assumed invalid and the segment
+     is not processed.
+
+     ATTENTION!!! NOFLAGERRTPL should be modified appropriately.
+
+     Default: NO
+
+
+
+     3.2.7.10  Variable: ADDEDFLAGS
+     --------------------------------------------------------------------
+
+     Syntax: ADDEDFLAGS <flag> [<flag> [<flag> ...]]
+
+     This variable defines which flags should be added to the pointlist
+     string without any flags. This adding will be done in two cases:
+
+       (1) when the pointsegment string without any flags is being processed
+           if the variable NOFLAG is set to ADD;
+       (2) if the variable REMOVEBADFLAGS is set to YES and the pointsegment
+           string is received containing all incorrect flags. All the incorrect
+           flags will be removed and instead of them (if NOFLAG=NO or ADD) a
+           flag will be added according with the settings of ADDEDFLAGS.
+
+     The definition of value of this variable is closely connected with
+     the variable BAUD. Every flag in the value of this variable is
+     ·ÆÆ‚≠Æ·®‚·Ô to the according baudrate in the value if the variable BAUD.
+
+     Eg. when the following values are set:
+
+     BAUD 300 1200 2400 9600
+     ADDEDFLAGS V21 V22 V22 V32
+
+     to the pointsegmet string, in which the <baud_rate> field is 300, the
+     flag V21 will be added, 1200 and 2400 - V22, 9600 - V32.
+
+     Values by default: V21 §´Ô for 300,
+                        V22 for 1200 and 2400,
+                        V32 for 9600,
+                        MO for any other baud rate.
+
+
+     3.2.8  External utilities settings
+     --------------------------------------------------------------------
+
+     3.2.8.1  Variable: EXECBEFORE
+     --------------------------------------------------------------------
+
+     Syntax: EXECBEFORE [<path>\]<progname>
+
+     External program to be executed before processing of the segment
+     (of each segment in the case of compilation of the pointlist).
+
+     Among the parameters of the external utility one can set:
+
+       %S - the name of the segment being processed (with the path).
+
+     To define the word "%S" itself, you need to insert an extra "%"
+     character (%%S).
+
+     Examples of usage: EXECBEFORE c:\util\addcheck.exe %S
+                        EXECBEFORE echo.com exec with parameter %%S
+
+     By default the external utility is not executed.
+
+
+     3.2.8.2  Variable: EXECGOOD
+     --------------------------------------------------------------------
+
+     Syntax: EXECGOOD [<path>\]<progname>
+
+     External program to be executed after processing of a correct segment,
+     but before sending of the report message and moving the segment into
+     the MASTER directory.
+
+     Among the parameters of the external utility one can set:
+
+       %S - the name of the segment being processed (with the path),
+       %O - the name of the old segment (the search in the MASTER directory
+            will be performed and the name of the first segment, which
+            corresponds to the SEGMENTFORMAT definition, will be passed
+            to the external utility; if no segment will be found the word
+            "%O" itself will be passed).
+
+     To pass the words "%S" and "%O" themselves, you need to insert an
+     extra "%" character ("%%S" or "%%O").
+
+     Examples of usage: EXECGOOD c:\util\execgood.exe %S %O
+                        EXECGOOD echo.com exec with parameter %%S
+
+     By default the external utility is not executed.
+
+
+     3.2.8.3  Variable: EXECBAD
+     --------------------------------------------------------------------
+
+     Syntax: EXECBAD [<path>\]<progname>
+
+     External program to be executed after processing of an incorrect
+     segment, but before sending of the report message and moving the
+     segment into the MASTER directory.
+
+     Among the parameters of the external utility one can set:
+
+       %S - the name of the segment being processed (with the path),
+       %O - the name of the old segment (the search in the MASTER directory
+            will be performed and the name of the first segment, which
+            corresponds to the SEGMENTFORMAT definition, will be passed
+            to the external utility; if no segment will be found the word
+            "%O" itself will be passed).
+
+     To pass the words "%S" and "%O" themselves, you need to insert an
+     extra "%" character ("%%S" or "%%O").
+
+     Examples of usage: EXECBAD c:\util\execbad.exe %S %O
+                        EXECBAD echo.com exec with parameter %%S
+
+     By default the external utility is not executed.
+
+
+     3.2.8.4  Variable: TOUCHGOOD
+     --------------------------------------------------------------------
+
+     Syntax: TOUCHGOOD [<path>\]<progname>
+
+     This variable defines the name of the flag file created in case of
+     receiving and proccessing of a correct segment. The flag file is
+     creater just after the execution of the EXECGOOD routine.
+
+     By default the flag file is not created.
+
+
+     3.2.8.5  Variable: TOUCHBAD
+     --------------------------------------------------------------------
+
+     Syntax: TOUCHBAD [<path>\]<progname>
+
+     This variable defines the name of the flag file created in case of
+     receiving and proccessing of a correct segment. The flag file is
+     creater just after the execution of the EXECGBAD routine.
+
+     By default the flag file is not created.
+
+
+     3.2.9  Settings for the pointlist compilation (argument "-L")
+     --------------------------------------------------------------------
+
+     3.2.9.1  Variable: POINTLIST
+     --------------------------------------------------------------------
+
+     Syntax: POINTLIST [<path>\]<pntlname>[.<ext>]
+
+     Defines the name of the pointlist being compiled. If defined without
+     extention, PNTCHK will add as extention the day-of-year of the
+     date of pointlist compilation (or of the nearest friday, according
+     to the value of the PNTLDATE variable).
+
+     Examples of usage: POINTLIST c:\pntchk\pntlist\pnt5020
+                        POINTLIST pnt5020.ndl
+
+     Default value is impossible.
+
+
+     3.2.9.2  Variable: PNTLDATE
+     --------------------------------------------------------------------
+
+     Syntax: PNTLDATE TODAY | FRIDAY
+
+     The date of the pointlist, inserted into it. This variable
+     influences to values of macros @date, @month, @year, @weekday, and
+     @daynumber.
+
+     Possible values:
+
+        TODAY  - the date of the pointlist compilation,
+        FRIDAY - the date of the nearest friday.
+
+     Default value: TODAY
+
+
+     3.2.9.3  Variable: FAKECRCSTR
+     --------------------------------------------------------------------
+
+     Syntax: FAKECRCSTR <string>
+
+     Variable FAKECRCSTR sets value for @‡ntlcrc which subsequently will
+     be replaced with real CRC of the pointlist. The process of definition
+     of CRC of the pointlist is the following. As at the moment of its
+     assembly it is impossible to determine the CRC, since CRC is calculated
+     from already COMPILED pointlist file, fake-character string all over
+     again is inserted into the first line of the pointlist. Then, when the
+     pointlist is already compiled, its CRC is calculated, and in its
+     first line the fake-sequence is substituted by real CRC. By default
+     such fake-sequence is '00000', however its value can be changed with
+     the help of the definition of variable FAKECRCSTR.
+
+     An example of usage: FAKECRCSTR *****
+
+     Default: 000000
+
+
+     3.2.9.4  Variable: MAXNUMBER
+     --------------------------------------------------------------------
+
+     Syntax: MAXNUMBER <nodenumber>
+
+     Variable MAXNUMBER allows to set biggest number of a node in the
+     network. Search of segments is carried out trivially: checker scans
+     MASTER directory and tries to find segments of sites under the order,
+     since 1, 2, 3 and ending with 32767 then, in case of detection,
+     handles these segments. MAXNUMBER allows to limit this process for
+     acceleration of the process of assembly.
+
+     An example of usage: MAXNUMBER 1000
+
+     Default: 32767
+
+
+     3.2.9.5  Variable: CREATIONCHECK
+     --------------------------------------------------------------------
+
+     Syntax: CREATIONCHECK FULL | MEDIUM | QUICK
+
+     This variable determines the level of detail of check of incomming
+     pointlist segments.
+
+     Possible values:
+
+        FULL   - detailed check of segment (like in '-S' mode),
+        MEDIUM - check only for presence in the nodelist and for the
+                 age of the segment,
+        QUICK  - check only for presence in the nodelist.
+
+     Default value: FULL
+
+     Notice: when MEDIUM/QUICK no copying of the segment to the BACKUPDIR
+     directory will be made, even if it is defined.
+
+
+     3.2.9.6  Variable: EXECPNTLST
+     --------------------------------------------------------------------
+
+     Syntax: EXECPNTLST [<path>\]<progname>
+
+     External utility executed after the compilation of the pointlist.
+
+     Among the parameters of the external utility one can set:
+
+       %P - the name of the pointlist compiled,
+       %D - day-of-year of the pointlist compiled.
+
+     To pass the words "%P" and "%D" themselves, you need to insert an
+     extra "%" character before ("%%P" or "%%D").
+
+     Example of usage: EXECPNTLST c:\util\hatch.exe %P %D
+
+     By default the external utility is not executed.
+
+
+     3.2.10  Main templates for report messages
+     --------------------------------------------------------------------
+
+     3.2.10.1  Variable: NORMALTEMPLATE
+     --------------------------------------------------------------------
+
+     Syntax: NORMALTEMPLATE [<path>\]<tplname>
+
+     This variable defines the file template name for the report messages
+     sent after the check of the segment in the '-S' mode, if the segment
+     is correct, as well as in case of an incorrect segment if the value
+     of variable ONLYONEREPORT is set to NO (see below).
+
+     Example: NORMALTEMPLATE Normal.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.10.2  Variable: ERRORTEMPLATE
+     --------------------------------------------------------------------
+
+     Syntax: ERRORTEMPLATE [<path>\]<tplname>
+
+     This variable defines the name of file template with the header
+     for error reports.
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.10.3  Variable: STRERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: STRERRTPL [<path>\]<tplname>
+
+     Main template for report messages on the mistakes in the
+     pointsegment lines.
+
+     Example of usage: STRERRTPL Strerror.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.10.4  Variable: PNTLSTERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: PNTLSTERRTPL [<path>\]<tplname>
+
+     Main template for the report messages during the pointlist
+     compilation (command line switch '-L').
+
+     Example of usage: PNTLSTERRTPL Pntlst.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11  Templates for error reports
+     --------------------------------------------------------------------
+
+     3.2.11.1  Variable: NDLERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: NDLERRTPL <filename>
+
+     Defines the name of the template file for the errors during
+     nodelist check.
+
+     The PNTCHK distribution contains the example of such a
+     template: ndlerror.tpl
+
+
+     3.2.11.2  Variable: NMBRERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: NMBRERRTPL [<path>\]<tplname>
+
+     Errors in the pointsegment line describing the bossnode ('Boss,*')
+     follow to report messages, the text of which is contained in this
+     template.
+
+     Example of usage: NMBRERRTPL Nmbrerr.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.3  Variable: EQNUMERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: EQNUMERRTPL [<path>\]<tplname>
+
+     The template for the error, when two or more points have an equal
+     address (number).
+
+     Example of usage: EQNUMERRTPL Equalnum.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.4  Variable: AGEERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: AGEERRTPL [<path>\]<tplname>
+
+     The name of template file, containing the message on the error
+     about exeeding by the segment of the maximum admissible age.
+
+     Example of usage: AGEERRTPL Ageerr.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.5  Variable: AGEWRNTPL
+     --------------------------------------------------------------------
+
+     Syntax: AGEWRNTPL [<path>\]<tplname>
+
+     The file template name, containing the warning about exeeding of the
+     maximum admissible age of the segment
+
+     Example of usage: AGEWRNTPL Agewrn.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.6  Variable: EMPTYLINETPL
+     --------------------------------------------------------------------
+
+     Syntax: EMPTYLINETPL [<path>\]<tplname>
+
+     The name of template file, containing the warning or error message
+     when an empty line in the segment is found.
+
+     Examples of usage: EMPTYLINETPL Emplnwrn.Tpl
+                        EMPTYLINETPL Emplnerr.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.7  Variable: UNIXLINETPL
+     --------------------------------------------------------------------
+
+     Syntax: UNIXLINETPL [<path>\]<tplname>
+
+     Template file name, containing warning or message about detecting
+     UNIX-format (not ends fith cr/lf) line in segment.
+
+     Example of usage: UNIXLINETPL Unixlnwn.Tpl
+                       UNIXLINETPL Unixlner.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.8  Variable: CMNTRRRTPL
+     --------------------------------------------------------------------
+
+     Syntax: CMNTERRTPL [<path>\]<tplname>
+
+     Template file name, containing warning to be shown in case of exceeding
+     number of lines with commnets in segment of maximum acceptable number.
+
+     The PNTCHK distribution contains examples of templates
+     Cmntwrn.Tpl and Cmntwrn2.Tpl (for different values of the variable
+     BETWEENCOMMENTS).
+
+     Example of usage: CMNTERRTPL Cmntwrn.Tpl
+                       CMNTERRTPL Cmntwrn2.Tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.9  Variable: INADMCHARERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: INADMCHARERRTPL [<path>\]<tplname>
+
+     Template of error, in case of invalid character in pointsegment line.
+
+     Example of usage: INADMCHARERRTPL inacherr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.10  Variable: PREFERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: PREFERRTPL [<path>\]<tplname>
+
+     Pointsegment line prefix error message template (see PREFIX variable).
+
+     Example of usage: PREFERRTPL preferr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.11  Variable: PONUMERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: PONUMERRTPL [<path>\]<tplname>
+
+     Point number error message template (number must belong
+     to 1..32768 range).
+
+     Example of usage: PONUMERRTPL numpoerr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.12  Variable: BAUDERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: BAUDERRTPL [<path>\]<tplname>
+
+     <baud_rate> field error message template.
+
+     Example of usage: BAUDERRTPL bauderr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.13  Variable: PHONEERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: PHONEERRTPL [<path>\]<tplname>
+
+     <Phone> field error message template.
+
+     Example of usage: PHONEERRTPL phoneerr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.14  Variable: LOCATERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: LOCATERRTPL [<path>\]<tplname>
+
+     <Location> field error message template.
+
+     Example of usage: LOCATERRTPL locaterr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.15  Variable: SYSTEMERRTPL
+     --------------------------------------------------------------------
+
+     Syntex: SYSTEMERRTPL [<path>\]<tplname>
+
+     <System> field error message template.
+
+     Example of usage: SYSTEMERRTPL systerr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.16  Variable: SYSOPERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: SYSOPERRTPL [<path>\]<tplname>
+
+     <SysOp> field error message template.
+
+     Examples of usage: SYSOPERRTPL sysoperr.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.17  Variable: NOFLAGGERTPL
+     --------------------------------------------------------------------
+
+     Syntax: NOFLAGERRTPL [<path>\]<tplname>
+
+     Name of template file, containing message for case of detecting pointlist
+     line with no flags (look NOFLAG variable)
+
+     Examples of use: NOFLAGERRTPL noflgerr.tpl
+                      NOFLAGERRTPL noflger2.tpl ; for NOFLAG=NO
+                      NOFLAGERRTPL noflgwrn.tpl ; for NOFLAG=ADD
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.18  Variable: FLAGERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: FLAGERRTPL [<path>\]<tplname>
+
+     Name of template faile, containing message for case of detection unknown
+     flag in poinlist line.
+
+     Bug report or warning template is used in depend of FLAGERRTPL value.
+
+     Examples of use: FLAGERRTPL flagerr.tpl
+                      FLAGERRTPL flagwrn.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.19  Variable IMPLERRTPL
+     --------------------------------------------------------------------
+
+     Syntax: IMPLERRTPL [<path>\]<tplname>
+
+     Name of template file, containing message for case of detecting flag
+     in pointlist line, that entries into other flag.
+
+     Bug report or warning template is used in depend of REMOVEBADFLAGS value.
+
+     Examples of use: IMPLERRTPL implerr.tpl
+                      IMPLERRTPL implwrn.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.11.20  Variable: DUPFLGERERPL
+     --------------------------------------------------------------------
+
+     Syntax: DUPFLGERRTPL [<path>\]<tplname>
+
+     Name of template, containing message for case of detection duped flags
+     in poinlist line.
+
+     Bug report or warning template is used in depend of DUPFLGERRTPL value.
+
+     Examples of usage: DUPFLGERRTPL dupflerr.tpl
+                        DUPFLGERRTPL dupflwrn.tpl
+
+     Default template doesn't exist (used in lite version).
+
+
+     3.2.12  Report-message templates, used in pointlist creating
+     --------------------------------------------------------------------
+
+     3.2.12.1  Variable: PNTLSTHEADER
+     --------------------------------------------------------------------
+
+     Syntax: PNTLSTHEADER [<path>\]<tplname>
+
+     Textfile name, that will be inserted into the beginning of pointlist
+     (usually it contains rules of segment sending and other administrative
+     information).
+
+     Example of use: PNTLSTHEADER Rules.Tpl
+
+     Default template doesn't exist.
+
+
+     3.2.12.2  Variable: PNTLSTFOOTER
+     --------------------------------------------------------------------
+
+     Syntax: PNTLSTFOOTER [<path>\]<tplname>
+
+     Textfile name, that will be inserted to the end of compilling pointlist.
+
+     Example of use: PNTLSTFOOTER Epilog.Tpl
+
+     Default template doesn't exist.
+
+
+     3.2.12.3  Variable: PNTSEGHEADER
+     --------------------------------------------------------------------
+
+     Syntax: PNTSEGHEADER [<path>\]<tplname>
+
+     Textfile name, that will be inserted into the compilling pointlist before
+     the each segment.
+
+     Example of use: PNTSEGHEADER Before.Tpl
+
+     Default template doesn't exist.
+
+
+     3.2.12.4  Variable: PNTSEGFOOTER
+     --------------------------------------------------------------------
+
+     Syntax: PNTSEGFOOTER [<path>\]<tplname>
+
+     Textfile name, that will be inserted into the compilling pointlist after
+     the each segment.
+
+     Example of use: PNTSEGFOOTER After.Tpl
+
+     Default template doesn't exist.
+
+
+     3.2.13  Stuff
+     --------------------------------------------------------------------
+
+     3.2.13.1  Variable: ASSIGN
+     --------------------------------------------------------------------
+
+     Syntax: ASSIGN @<variable> [@]<value>
+
+     Templates of report-messages, sent by cheker, can include not only
+     predefined text, but some macros, which value vill be logged into report
+     at the moment of posting.
+     The defined number of predefined macros exists, such as, for example,
+     @nameprog or @version. Theirs detailed description vill be shown in the
+     chapter 4.
+
+     Except of predefined macros user can manually sefine some of such
+     variables. ASSIGN variables are used for this. Any macros name can be
+     selected, except predefined ones. User`s macros value can be any word or
+     group of words, and textfile name.
+     In the latter case user`s macros value  must be started with "@" symbol.
+     The search of this textfile performs by the rules of template search, e.g.
+     default search will be performed in current folder and in folder, defined
+     in TEMPLATEPATH variable.
+
+     User can manually define up to 10 macros, using some ASSIGN variables.
+     In case of exceed of this number, spare variables will be ignored.
+
+     Examples of use:
+                            ASSIGN @HELLO Hello everybody!
+                            ASSIGN @NOTE @NOTE.TPL
+                            ASSIGN @REPORT @c:\text\report.txt
+
+
+
+     3.3  Regular expressions
+     --------------------------------------------------------------------
+
+     In all configuration files, variables, where operation of compare is used,
+     one can define mask, based on regular expressions (regexp - Copyright (c)
+     1986 by University of Toronto, written by Henry Spencer).
+
+     Rules of mask definement:
+
+       * - means any number of any characters
+       ? - any one symbol or none characters
+       [..] (list) - number of symbols, contained in '['...']'.
+            Defines one character of list (exmple: [abcde] - any character
+            of: a, b, c, d, e).
+            If 2 characters from list separated with '-' character, it
+            defines the sequence of ASCII characters between them (for
+            example, [0-9] defines any decimal digit.
+            To include the '[' symbol into the sequence, one should define it
+            first (example: []abcde]), '-' symbol should stand first or last.
+            The value of combined lists of view [abcd-e] (not [a-cde]) is
+            permissiable.
+
+
+     3.4  ErrorLevels of PNTCHK
+     --------------------------------------------------------------------
+
+     In depend of error presence in segment(-s), and at originate of emergency
+     situation PNTCHK ends it`s work with different errorlevels:
+
+       GoodSegment           = 1 (all segments are good)
+       BadSegment            = 2 (all segments are bad)
+       DifferentSegment      = 3 (presence of good and bad segments)
+
+     Emergency stop:
+
+       SegmentNotFound            = 201
+       IncorrectSegmentName       = 202
+       CtlNotFound                = 203
+       NetmailNotFound            = 204
+       MasterNotFound             = 205
+       BadfilesNotFound           = 206
+       CannotcreateTempFile       = 207
+       CantMove                   = 208
+       BackupNotFound             = 209
+       TempdirNotFound            = 210
+       TemplateNotFound           = 211
+       UnableToCreatePointlist    = 212
+       NotCompatibleWithLiteMode  = 213
+
+
+     4.  Macros
+     --------------------------------------------------------------------
+
+     Templates are widely used in sending report messages, which you can
+     edit as you wish, for example, you can translate the template into
+     Russian (the example of such translation is uncluded in complete set
+     of the product).
+     In templates one can define macros to be changed to suitable at this
+     moment values for sending report.
+
+     Here is the list of macros:
+
+     General information:
+
+     @NAMEPROG       - software name ("PNTCHK" for DOS version,
+                                      "PNTCHK/2" for OS/2 version,
+                                      "PNTCHKP" for DOS/32 version,
+                                      "PNTCHKW" for Win32 version,
+                                      "PNTCHKL" for Linux version,
+                                      "PNTCHKB" for FreeBSD version)
+     @VERSION        - product version
+     @SERIAL         - registraion number (UNREG for unregistered version)
+     @OWNER          - product copy owner name
+     @ADDRESS        - your system address
+     @SENDER         - segment sender's address
+     @SEGNAME        - name of processing segment
+     @SEGFULLNAME    - full name of segment (with path)
+     @NEWSEGNAME     - name of segmet after it's rename
+     @SEGLENGTH      - it's length
+     @SEGDATE        - time of it's creation
+     @SEGLINES       - summary number of lines in segment
+     @COMMENTCOUNT   - number of comments in segment
+     @SEGFORMAT      - format of the name of segment used
+     @NDLNAME        - name of current nodelist
+     @NDLFULLNAME    - name of current nodelist with path
+     @FIRSTSYSOPNAME - segment sender's name and
+     @LASTSYSOPNAME    surname (are taken from nodelist)
+     @SEGWRNAGE      - age of segment, at exceeding of which the warning
+                       will be shown
+     @SEGERRAGE      - age of segment, at exceeding of which the segment
+                       won't be processed
+     @DAYSTOEXPIRE   - number of days left until the expiration time
+     @ERRORNUMBER    - summary number of errors at this moment
+     @WARNINGNUMBER  - summary number of warnings at this moment
+     @RESULT         - result of the chek - 'Ok' or 'Bad'.
+
+
+     At line-by-line process of segment:
+
+     @CURRENTSTRING  - current line
+     @LINENUMBER     - number of current line
+                 it's parts:
+     @PREFIX         - prefix
+     @POINT          - point's address
+     @SYSTEM         - name of the system
+     @NEWSYSTEM      - new value of "name of the system" field
+     @SYSOP          - SysOp's name
+     @NEWSYSOP       - new value of "SysOp's name" field
+     @LOCATION       - location
+     @NEWLOCATION    - new value of "location" field
+     @PHONE          - phone nubmer
+     @NEWPHONE       - new phone number at ChangePhone=Yes
+     @BAUD           - baudrate of modem
+     @NEWBAUD        - new value of "baudrate" field
+     @FLAGS          - flags
+     @ADDEDFLAG      - added flag at NOFLAG=ADD 
+
+     @IDEALSTRING    - at boss-checking correct line that should be here
+     @REASON         - reason of non process of segment at work with nodelist
+     @CURRENTFLAG    - currently processed flag at work with flags
+     @IMPLTOFLAG     - flag that includes current flag
+     @INADMCHAR      - code of found uncommited character at check for
+                       inadmissible characters
+
+     At pointlist compilation:
+
+     @DATE           - date
+     @MONTH          - month
+     @YEAR           - year
+     @WEEKDAY        - weekday
+     @DAYNUMBER      - number of day in yaer
+     @PNTLCRC        - crc16 of created pointlist (can be located only in
+                       the 1st line of pointlist
+
+     Macros can be defined in some variables of configuration file, for
+     example, variables FROM, SUBJECT, TEARLINE.
+
+
+     5.  Lite version
+     --------------------------------------------------------------------
+
+     PNTCHK can be used not only as coordinator's checking incoming segments
+     robot and equiping pointlist robot, but as utility, checking segments
+     before sending them to coordinator. For this one should set the
+     value of variable LITE to YES.
+     At that the value of several variables in the configuration file
+     (which are responsible for sending report messages, work with nodelist
+     and some other) no longer matter.
+
+     Here is full list of varables, the value of which doesn't influence
+     to work of checker in the lite-mode:
+
+     ABSENTPOINTS   EXECGOOD         NODELIST        PVTPOINTS
+     AGEERRTPL      FAKECRCSTR       NOFLAGERRTPL    RENAMESEGMENT
+     AGEWRNTPL      FLAGERRTPL       NORMALPOINTS    SEGERRAGE
+     ASSIGN         FROM             NORMALTEMPLATE  SEGWRNAGE
+     ATTRIBUTES     HOLDPOINTS       ONLYONEREPORT   STRERRTPL
+     BACKUPDIR      HUBPOINTS        ORIGIN          SUBJECT
+     BADFILES       IMPLERRTPL       PHONEERRTPL     SYSOPERRTPL
+     BAUDERRTPL     INADMCHARERRTPL  PNTLDATE        SYSTEMERRTPL
+     CMNTERRTPL     KILLBAD          PNTLSTERRTPL    TEARLINE
+     COORDINATOR    LOCATERRTPL      PNTLSTFOOTER    TEMPDIR
+     DOWNPOINTS     MASTER           PNTLSTHEADER    TEMPLATEPATH
+     DUPFLGERRTPL   MAXNUMBER        PNTSEGFOOTER    TO
+     EMPTYLINETPL   NDLERRTPL        PNTSEGHEADER    TOUCHBAD
+     EQNUMERRTPL    NDLINDEX         POINTLIST       TOUCHGOOD
+     ERRORTEMPLATE  NETMAIL          PONUMERRTPL     TOUCHSEGMENTS
+     EXECBAD        NMBRERRTPL       PREFERRTPL
+
+     PNTCHK distribution contains example configonfig file pnt_lite.ctl, 
+     in which all the necessary changes are made.
+
+
+     6.  Legal stuff
+     --------------------------------------------------------------------
+
+     Athough PTNCHK was newer declared freeware oficially, it`s spreading
+     and terms of use are similar to freeware software. PNTCHK allows to
+     register the installed copy. But there are no limitations or differences
+     (except drawing of information about registered user) in unregistered
+     version of PNTCHK.
+     At the same time I thank users, who have registered.
+
+
+     6.1  Licence and Disclaimer
+     --------------------------------------------------------------------
+
+     Although the program admits its registration, it is distributed
+     similar to freeware, i.e. you may use, copy and distribute it freely,
+     as long as no money is charged for it. Do not modify, disassemble,
+     reengineer, or misuse this program.
+
+     You are using this program ON YOUR OWN RISK. The author is not
+     liable for any damage or loss which may result directly or
+     indirectly from the use of this program.
+
+
+     6.2  Distribution
+     --------------------------------------------------------------------
+
+     This program may be copyed and distributed freely, as long as no
+     money is charged for it. Always distribute this documentation along
+     with the program. Distribution on CD-ROMs is explicitly allowded.
+
+
+     6.3  Copyrights and Trademarks
+     --------------------------------------------------------------------
+
+     The names of programs and product mentioned here do only serve the
+     purpose of identification. They may be trademarks of their producers
+     and are legally protected.
+
+     6.4  Credits
+     --------------------------------------------------------------------
+
+     If you have any trouble with PNTCHK or if you have a terrible
+     great idea what might be improved, then please do not be afraid of
+     writing a mail to me. Please mention the version of PNTCHK you
+     are currently using.
+
+             Pavel I.Osipov, 119333, Moscow, at demand
+             E-mail: forsite@spamtest.ru
+             Fido: Pavel I.Osipov@2:5020/770
+
+
+     7.  Final words
+     --------------------------------------------------------------------
+
+     7.1    System requirements
+     --------------------------------------------------------------------
+
+     PNTCHK requires the following system:
+     - DOS from 3.3 or OS/2 from 2.0
+     - about 500 kb free conventional memory
+     - six free file handles (see "FILES=" statement in your CONFIG.SYS)
+     - 80286-compatible processor for the DOS-version,
+       80386-compatible processor for the OS/2-version
+
+     Recommended:
+     - a fast harddisk
+     - a large (software) cache for your hard disk (1 MB and above)
+     - several MB free memory (DOS: XMS)
+
+
+     7.2  Where to get new versions
+     --------------------------------------------------------------------
+
+     New versions of PNTCHK will be hatched into AFTNMISC fileecho so
+     they are available in all linked mailboxes some days later.
+     Additionaly there are two ways where you can receive new versions:
+
+     - on the support webpage:
+          http://pntchk.ibch.ru/
+
+     - via file request in FidoNet
+          at 2:5020/770
+          magic "PNTCHK" for the current version,
+
+
+     7.3  Version history
+     --------------------------------------------------------------------
+
+     The first version of PNTCHK (0.01.alpha) was issued in August 3, 1997.
+     Then PNTCHK yet was not public project, and was made to the order of
+     N5020C Alex Golosov, 2:5020/381 for simplification of the check of
+     the coming point segments (then he was engaged in the point list),
+     in exchange of CheckNL by Michel Lavrentiev (?), not responding all
+     the requirements. 
+
+     Version 0.03.alpha, issued in August, 19, 1997 started in file
+     AFTNMISC. Thus it was beginning of the wide distribution of PNTCHK
+     on fid net. 
+
+     First stable (0.05.beta) version of the program started October 27, 1997.
+     The number of the registered users made only 4 persons. And to the
+     moment of an output of the following stable version
+     30.11.97 - 0.07.beta - the number of registered users was already 15.
+     There were:
+
+     Alex GolosOFF (ex-N5020C),
+     Mitry Matyushkov (today R45C),
+     Yuri Bobrov (ex-2:5029/2@fidonet),
+     ---------------------
+     | Konstantin Gilyov | (ex-N5000C),
+     ---------------------
+     Vlad Spiridonov (N5049PK),
+     Eugene Gladchenko (N5061C),
+     Alex Komarskix (N5010PK),
+     Anton Kuznetsov (R46C),
+     Igor Grabelnikov (N5063C).
+
+     These people played a great role in testing of the quite working,
+     but still containing a lot of errors program.
+
+     Fast growth of a number of users of the program (in March 5, 1998
+     the number of users was already 24, and in May 18, 1998 - 30) has
+     forced to insert all new possibilities to make PNTCHK responding to
+     the demands of the increasing number of people. It turned PNTCHK
+     from highly specialized private project in a really public project. 
+
+     During the existence of the program 19 versions started. Not only the
+     functions of checking, but also automatic correcting segments were
+     added, the syntax of masks was widen, the whole block on the assembly
+     of the point list from segments were added in to the program. At the
+     end the site of the support of the program http://pntchk.ibch.ru/ 
+     (it is accessible as well as http://www.ibch.ru/pntchk/) was created. 
+
+     August, 7, 2000 there was a last public alpha program - 0.19.alpha
+     (number of registered users - 54). To this moment PNTCHK became quite
+     stable, the program code licked enough. It has allowed to make a
+     decision about the beginning of the finishing stage of the release
+     of versions 0.xx and preparation for the release 1.00. 
+
+     From the 19th of November 2000 to January, 05, 2004 6 pre-releases
+     of the program were released which primary goal was porting of the
+     program under the different operating systems, and also the correction
+     of all errors connected to this process. 
+
+     And....... long-awaited release 1.00 was issued. 
+
+
+
+     7.4  Thanks to...
+     --------------------------------------------------------------------
+
+     I want to thank the following persons who helped making PNTCHK to that
+     what it is today:
+
+     Alex Golosoff, 2:5020/381 - the honorable owner of the registration
+     code #2 without the demand of which to write PNTCHK, no PNTCHK would
+     appear in life. You should be the suicide to decide to write such
+     program yourself .;) 
+
+     Michel Lavrentyev, 2:5020/35 for his CheckNL, letters-reports of which
+     have lain in a basis of appearance of letters-reports PNTCHK. 
+
+     basil v. vorontsov, 2:5020/487 for his pascal libraries for the work
+     with a log-file, a ctl-file and for work with netmail and
+     Alexander Wolkow, 2:5020/764 - who has given these libraries. The
+     appearance of many program products of Basil and Alexander (for
+     example FAQSERVER or NEAN) also has affected the appearance of PNTCHK.
+
+     Mitry Matyushkov, 2:450/97 for constant advice, proposals on the
+     improvement of the program, and also the reports about mistakes.
+     Thanks to this person MORE THAN A HALF of all bugs were found and
+     fixed. A great thank to him for the help in conforming the files
+     with the norms of the English language. 
+
+     Dima Mushnitskiy, 2:5020/970 - before the appearance of the program
+     page who supported the opportunity of distribution of checker
+     through I-net.
