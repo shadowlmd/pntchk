@@ -1,7 +1,8 @@
+{$MODE TP}
 {$O+}
 Unit NetMa_me;
 Interface
-Uses DOS;
+Uses sysutils, DOS;
 Const
   {errors}
   bvMessageNotFound = 1;
@@ -227,11 +228,12 @@ End;
 
 Procedure TNetMail. Rescan;
 Begin
-  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} 
+  NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} 
          Then
     NetMailPath:=NetMailPath+{$IFDEF LINUX} 
 '/' {$ELSE} 
-'\' {$ENDIF} ;
+'\' {$ENDIF} ; *)
   FindFirst(NetMailPath+'*.msg', AnyFile-Directory, DirInfo);
   If DosError=0 then CurrentMsg := DirInfo.Name
                 else NetmailError := DosError;
@@ -239,13 +241,14 @@ End;
 
 Procedure TNetMail.OpenMsg;
 Begin
-  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
+  NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
 '/' {$ELSE} 
 '\' {$ENDIF}  Then
     NetMailPath:=NetMailPath+{$IFDEF LINUX} 
 '/' {$ELSE} 
 '\' {$ENDIF} 
-;
+; *)
   Assign (MFile, NetMailPath + CurrentMsg);
   FileMode := 2;
   {$I-}
@@ -266,7 +269,7 @@ End;
 
 Procedure TNetMail. LoadMessageText;
 Var
-  Really: {$IFDEF VIRTUALPASCAL } LongInt {$ELSE} Integer {$ENDIF};
+  Really:  LongInt;
 Begin
   If not MessageOpen Then
   Begin
@@ -316,13 +319,15 @@ Procedure TNetMail. NextMsg;
 Begin
   If MessageOpen Then
     CloseMsg;
-  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
+  NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
+
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
 '/' {$ELSE} 
 '\' {$ENDIF}  Then
     NetMailPath:=NetMailPath+{$IFDEF LINUX} 
 '/' {$ELSE} 
 '\' {$ENDIF} 
-;
+; *)
   MessageOpen := False;
   FindNext(DirInfo);
   If DosError<>0 Then NetMailError:=DosError;
@@ -331,8 +336,7 @@ End;
 
 Procedure TNetMail.SetCurrentTime;
 Var
-  Hour, Min, Sec, Sec100, Year, Month, Date, DoW: 
-{$IFDEF VIRTUALPASCAL } {$IFDEF FPC} Word {$ELSE} LongInt {$ENDIF} {$ELSE} Word {$ENDIF};
+  Hour, Min, Sec, Sec100, Year, Month, Date, DoW: Word;
 Begin
   GetTime(Hour, Min, Sec, Sec100);
   GetDate(Year, Month, Date, DoW);
@@ -344,7 +348,7 @@ End;
 
 Procedure TNetMail. CreateMsg;
 Var
-  MaxMsg, MsgNo, ZZ: {$IFDEF VIRTUALPASCAL } LongInt {$ELSE} Word {$ENDIF};
+  MaxMsg, MsgNo, ZZ: LongInt;
   P:DirStr;
   N:Namestr;
   E:ExtStr;
@@ -352,9 +356,11 @@ Begin
   If MessageOpen Then
     CloseMsg;
   FillChar(Header,190,0);
-  FindFirst (NetMailPath +{$IFDEF LINUX} 
+  FindFirst (ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath)) +'*.msg', AnyFile, DirInfo);
+
+(*  FindFirst (NetMailPath +{$IFDEF LINUX} 
 '/' {$ELSE} 
-'\' {$ENDIF} +'*.msg', AnyFile, DirInfo);
+'\' {$ENDIF} +'*.msg', AnyFile, DirInfo); *)
   MaxMsg := 0;
   While DosError = 0 do
   Begin
@@ -365,12 +371,14 @@ Begin
     FindNext (DirInfo);
   End;
   Inc (MaxMsg);
-  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
+  NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
+
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
 '/' {$ELSE} 
 '\' {$ENDIF}  Then
     NetMailPath:=NetMailPath+{$IFDEF LINUX} 
 '/' {$ELSE} 
-'\' {$ENDIF} ;
+'\' {$ENDIF} ; *)
   Assign (MFile, NetMailPath + XStr (MaxMsg) + '.msg');
   FileMode := 2;
   {$I-}
@@ -391,10 +399,11 @@ Begin
     Close(MFile);
     MessageOpen:=False;
    End;
-  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF}
+  NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF}
          Then NetMailPath:=NetMailPath+{$IFDEF LINUX} 
 '/' {$ELSE} 
-'\' {$ENDIF} ;
+'\' {$ENDIF} ; *)
   Assign (MFile, NetMailPath + CurrentMsg);
   Erase(MFile);
 End;
