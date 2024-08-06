@@ -8,8 +8,8 @@
 { ----- fixed -------- 0A/0D}
 { ----- fixed -------- из lite-версии убрать несчастный pntchk.exe }
 { ----- fixed -------- msg>32000 }
+{ ----- fixed -------- StrUpCase -> UpCase }
 
-{ StrUpCase -> UpCase }
 { проверка на соответствие длины сегмена длине макроса }
 { use fillchar!!! move }
 { rename -> ioresult<>0 -> copy/del }
@@ -28,31 +28,41 @@
 {*.pkt, squish}
 {check pointlist}
 
+{$MODE TP}
+{$MODESWITCH EXCEPTIONS}
+{$CODEPAGE CP866}
 (*{$M 65520,0,200000}*)
+(*
 {$IFDEF VIRTUALPASCAL }
 {$M 32767,0,200000 }
 {$ELSE}
 {$M 65520,0,200000 }
 {$ENDIF}
-{$I-,V-,S+,F+,D-,L-,R-,X+}
+*)
+{$I-,V-,S+,D-,R-,X+}
 (* {$S+} *)
 Program PNTCHK;
-Uses {$IFDEF LINUX} {$IFDEF BSD} linux, {$ELSE} unix, {$ENDIF} {$ENDIF} dos, {$IFDEF BW} CrtFake, {$ELSE} Crt, {$ENDIF}
-     ctlm_me, LOGMan_m, BVTools, Netma_me, tpstring,
-     crcunit, regexp  {$IFDEF VIRTUALPASCAL} {$ELSE} , swapunit {$ENDIF};
+Uses sysutils, {$IFDEF BW} CrtFake, {$ELSE} Crt, {$ENDIF}
+     ctlm_me, LOGMan_m, BVTools, Netma_me,
+     crcunit, regexp;
 
 Const
-  NameProg = {$IFDEF VIRTUALPASCAL } {$IFDEF WIN32} 'PNTCHK/W32' {$ELSE} {$IFDEF DOS32} 'PNTCHK/32' {$ELSE}
-             {$IFDEF LINUX} {$IFDEF FREEBSD} 'PNTCHK/BSD' {$ELSE} 'PNTCHK/LNX' {$ENDIF} {$ELSE} {$IFDEF EMX} 'PNTCHK/EMX'
-             {$ELSE} 'PNTCHK/2' {$ENDIF} {$ENDIF} {$ENDIF}
-             {$ENDIF}
-             {$ELSE} 'PNTCHK' {$ENDIF};
-{$IFDEF WIN32}  namefprog = 'W'; {$ENDIF}
+NameProg = 'PNTCHK'
+      {$IFDEF WIN32} +'/W32' {$ENDIF}
+      {$IFDEF WIN64} +'/W64' {$ENDIF}
+      {$IFDEF DPMI} +'/32' {$ENDIF}
+      {$IFDEF LINUX} +'/LNX' {$ENDIF}
+      {$IFDEF BSD} +'/BSD' {$ENDIF}
+      {$IFDEF OS2}{$IFDEF EMX} +'/EMX' {$ELSE} +'/2' {$ENDIF}
+      {$ENDIF}
+      ;
+{$IFDEF WINDOWS}  namefprog = 'W'; {$ENDIF}
 {$IFDEF EMX}    namefprog = 'E'; {$ENDIF}
-{$IFDEF DOS32}  namefprog = 'P'; {$ENDIF}
-{$IFDEF LINUX}  namefprog = {$IFDEF FREEBSD} '.BSD' {$ELSE} '.LNX' {$ENDIF}; {$ENDIF}
+{$IFDEF DPMI}  namefprog = 'P'; {$ENDIF}
+{$IFDEF LINUX}  namefprog = '.LNX'; {$ENDIF}
+{$IFDEF BSD} namefprog = '.BSD'; {$ENDIF}
 {  Version = '1.00+ (final)';}
-  Version = '1.00.rc6';
+  Version = '1.01.beta1';
   DefCommentCount = 5;
 {errorlevels}
 {  GoodSegment = 1;}
@@ -133,27 +143,33 @@ Const
     '@PNTLNAME',       {54}
     '@NEWSEGDATE');    {55}
 
+    LongMonthNames: TMonthNameArray = ('January','February','March','April','May','June',
+                     'July','August','September','October','November','December');
+    ShortMonthNames: TMonthNameArray = ('Jan','Feb','Mar','Apr','May','Jun', 
+                      'Jul','Aug','Sep','Oct','Nov','Dec');
+    LongDayNames: TWeekNameArray = ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
+    ShortDayNames: TWeekNameArray = ('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
+
 Var Ctlfl: string[80];
    TplConst : array [1..tplcount] of string[16];
-   a4,a2,a3,str1,str4,postr,str2,str3,owner,serial: string;
-   i: {$IFDEF VIRTUALPASCAL} LongInt {$ELSE} integer {$ENDIF};
+   a3,str1,str4,postr,str2,str3,owner,serial: string;
+   i:  LongInt;
    j,lk: integer;
    ertpl,segfl,templfl,tempfl2: text;
    tmpfile: file of byte;
    numb: longint;
    Net: TNetmail;
    addr,addr2: taddrtype;
-{   a1, a2, a3, a4: word;}
-   ch1: char;
    Tplar : array [1..tplcount] of string;
 
-   ftime : Longint; { For Get/SetFTime}
-   dt : DateTime; { For Pack/UnpackTime}
+   tftime : Longint; { For FileGet/SetDate}
+   TDT : TDateTime; { For DecodeDate/Time}
 
    unixlines,wasattr,endflag,eoff: boolean;
 {   namefprog: string;}
 
-  DirInfo,DirInfo2: SearchRec;
+  TDirInfo,TDirInfo2: TSearchRec;
+
  SEGMENTFORMAT: array[1..20] of string;
  formcount: byte;
  result: byte;
@@ -161,55 +177,6 @@ Var Ctlfl: string[80];
  infile2: file of byte;
  IndexFile: file of longint;
  indexfile2: file of byte;
-
-{$IFDEF LINUX}
-{$IFNDEF BSD}
-
-Function Utime(var f;utim:utimebuf):boolean;
-var
-  sr : Syscallregs;
-begin
-  sr.reg2:=longint(@(filerec(f).name[0]));
-  sr.reg3:=longint(@utim);
-  Utime:=SysCall(Syscall_nr_utime,sr)=0;
-  linuxerror:=errno;
-end;
-
-{$ELSE}
-
-Function Utime(var f;utim:utimebuf):boolean;
-begin
-  Utime:=do_syscall(syscall_nr_utimes,longint(@filerec(f).name[0]),longint(@utim))=0;
-  linuxerror:=errno;
-end;
-
-{$ENDIF}
-
-Procedure setftime(var f; time : longint);
-Var
-  utim: utimbuf;
-  DT: DateTime;
-
-Begin
-
-  doserror:=0;
- 
-  with utim do begin
-    actime:=gettimeofday;
-    UnPackTime(Time,DT);
-    modtime:=DTToUnixDate(DT);
-  end;
-
-  if not utime(f,utim) then
-   begin
-     Time:=0;
-     doserror:=3;
-     exit
-   end;
-  
-end;
-
-{$ENDIF}
 
 Procedure runerror(module: string;numbar: byte);
 begin
@@ -255,7 +222,7 @@ begin
 
 {   if plokho then plokho:=false;}
 
-     pora3:=strupcase(strseg);
+     pora3:=UpCase(strseg);
      pora4:=pora3;
 
      ter:=11;
@@ -308,7 +275,6 @@ Function TestName(stpath: string): string;
 var per,ter: integer;
     perdat: longint;
     stri1,stri2,stri3: string;
-    rc: integer;
 begin
 
    per:=0;
@@ -325,40 +291,22 @@ begin
     stri3:=test(lk,stri2);
 
 if stri3<>'' then begin
-
-    findfirst(stpath+stri3,$3F,dirinfo);
-    rc:=doserror;
-      while rc=0 do
-        begin
-          if perdat<dirinfo.time then
+     if SysUtils.findfirst(stpath+stri3,faAnyFile,Tdirinfo)=0 then
+       begin
+        repeat
+          if perdat<Tdirinfo.time then
              begin
-               perdat:=dirinfo.time;
-               stri1:=stpath+dirinfo.name
+               perdat:=Tdirinfo.time;
+               stri1:=stpath+Tdirinfo.name;
              end;
-          findnext(dirinfo);
-          rc:=doserror
-        end;
-
-     {$IFDEF VIRTUALPASCAL} findclose(dirinfo); {$ENDIF}
-
-
+        Until Sysutils.FindNext(Tdirinfo)<>0;
+       Sysutils.FindClose(TDirInfo);
+       end;
 end;
 
    until per=formcount;
 
-
    testname:=stri1
-
-end;
-
-Procedure changetime;
-var tfile: file;
-begin
-
- assign(tfile,tplar[33]);
- reset(tfile);
- setftime(tfile,ftime);
- close(tfile)
 
 end;
 
@@ -367,15 +315,15 @@ var a1: byte;
     st1,st2: string;
 begin
 
-  a1:= pos('%O',strupcase(para));
+  a1:= pos('%O',UpCase(para));
   if (a1<>0)
     then if para[a1-1]='%' then delete(para,a1-1,1)
                            else
 
    begin
       st1:= GetCTLValueLite ('MASTER');
-      if st1='' then getdir(0,st1);
-      if st1[length(st1)]<> {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} then st1:=st1+ {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} ;
+      if st1='' then st1:=GetCurrentDir;
+      st1:=ExtractFilePath(IncludeTrailingPathDelimiter(st1));
 
       st2:= testname(st1);
       if st2<>'' then
@@ -387,7 +335,7 @@ begin
          end
    end;
 
-  a1:= pos('%S',strupcase(para));
+  a1:= pos('%S',UpCase(para));
   if (a1<>0)
     then if para[a1-1]='%' then delete(para,a1-1,1)
                            else
@@ -397,7 +345,7 @@ begin
 
 end;
 
-  a1:= pos('%P',strupcase(para));
+  a1:= pos('%P',UpCase(para));
   if (a1<>0)
     then if para[a1-1]='%' then delete(para,a1-1,1)
                            else
@@ -407,7 +355,7 @@ begin
 
 end;
 
-  a1:= pos('%D',strupcase(para));
+  a1:= pos('%D',UpCase(para));
   if (a1<>0)
     then if para[a1-1]='%' then delete(para,a1-1,1)
                            else
@@ -422,45 +370,17 @@ paramo:=para
 end;
 
 Procedure execpr(paramst:string);
-var rc: integer;
-  {$IFDEF LINUX }
-    progr,param:string;
-  {$ENDIF}
-
+var progr,param:string;
 begin
-
 logmsg('%','Executing : '+paramst);
-
-  {$IFDEF VIRTUALPASCAL }
-
-  {$IFDEF LINUX }
-
-  splitstring(paramst,progr,param);
-  if progr='' then begin progr:=param; param:='' end;
-
-  Exec( progr, param );
-
-  {$ELSE}
-
-Exec( getenv ( 'COMSPEC' ), '/C'+paramst );
-
-  {$ENDIF}
-
-  {$ELSE}
-
-    if prepareswap ( ptr ( seg ( freelist ^ ) + $1000, 0 ), 'pntchk.$$$' ) then
-    begin
-        swap ( getenv ( 'COMSPEC' ), '/C'+paramst);
-        removeswap
-    end;
-    gotoxy(1,wherey-1);
-
- {$ENDIF}
-
-rc:= doserror;
-if rc=0 then
-    rc:= dosexitcode;
-logmsg('%','SWAP RESULT: '+ xstr(rc));
+splitstring(paramst,progr,param);
+if progr='' then begin progr:=param; param:='' end;
+  Try
+  ExecuteProcess(progr, param, []);
+  Except
+    On E: EOSError Do
+      logmsg('!','Failed to execute program : '+progr);
+  End;
 end;
 
 Procedure execonce;
@@ -479,14 +399,13 @@ begin
        close(aaa);
        io:=ioresult
      end;
-    if io<>0 then logmsg('!','An error occured creating the flagfile : '+strupcase(flagname))
-      else logmsg('%','Creating the flagfile : '+strupcase(flagname))
+    if io<>0 then logmsg('!','An error occured creating the flagfile : '+UpCase(flagname))
+      else logmsg('%','Creating the flagfile : '+UpCase(flagname))
 end;
 
 begin
 
- changetime;
-
+ FileSetDate(tplar[33],tftime);
 
  if tplar[11] {@result} = 'ok' then
    begin
@@ -507,24 +426,10 @@ begin
    end
 end;
 
-function LeadingZero(w : Word) : String;
- var
-   s : String;
- begin
-   Str(w:0,s);
-   if Length(s) = 1 then
-     s := '0' + s;
-   LeadingZero := s;
- end;
-
-Function retfname(p:pathstr;put:boolean):string;
-var
-  D: DirStr;
-  N: NameStr;
-  E: ExtStr;
+Function retfname(p:string;put:boolean):string;
 begin
-  FSplit(P, D, N, E);
-  if put then retfname:=D else retfname:=N+E
+  if put then retfname:=ExtractFilePath(P)
+  else retfname:=ChangeFileExt(ExtractFileName(P),'')+ExtractFileExt(P);
 end;
 
 Procedure haltonerror(logmessage: string; errorcode: word);
@@ -538,13 +443,10 @@ begin
    DoneCTLManager;
 {   textcolor(7); write(' ');}
 
-  if str1<>'' then if str1[length(str1)]<> {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} then str1:=str1+ {$IFDEF LINUX} '/'
-                                        {$ELSE} '\' {$ENDIF} ;
   str2:='MSG_TMP.FFF';
 
-  if exist(str1+str2) then begin
-    assign(templfl, str1+str2);
-    erase(templfl)
+  if FileExists(ExtractFilePath(str1)+str2) then begin
+    DeleteFile(str1+str2);
   end;
 
    halt(errorcode)
@@ -571,12 +473,8 @@ begin
  if ioresult<>0 then
    begin
      str8:=getctlvaluelite('TEMPLATEPATH');
-     if str8[length(str8)]<> {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then str8:=str8+ {$IFDEF LINUX} 
-'/' {$ELSE}  
-'\'{$ENDIF} ;
-     str8:=str8+tplnm;
+     if str8='' then str8:=IncludeTrailingPathDelimiter(GetCurrentDir)+tplnm else 
+        str8:=ExtractFilePath(IncludeTrailingPathDelimiter(str8))+tplnm;
      assign(tpfl^ [1],str8);
      reset(tpfl^ [1]);
      if ioresult<>0 then
@@ -585,19 +483,9 @@ begin
      end; end;
 
  str8:=getctlvalue('TEMPDIR');
- if str8[length(str8)]<> {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then str8:=str8+ {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
-;
- k:=length(tplnm);
- repeat
-   dec(k);
- until (tplnm[k]= {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ) or (k=0);
- str8:=str8+copy(tplnm,k+1,length(tplnm)-k);
+ tplnm:=ExtractFileName(tplnm);
+ if str8='' then str8:=IncludeTrailingPathDelimiter(GetCurrentDir)+tplnm else 
+    str8:=ExtractFilePath(IncludeTrailingPathDelimiter(str8))+tplnm;
  assign(tmpfl,str8);
  rewrite(tmpfl);
  if ioresult<>0 then begin
@@ -626,7 +514,7 @@ begin
                     delete(str8,b1-1,1);
 end;
    if b1=1 then b2:=1;
-   b1:= pos('@END',strupcase(str8));
+   b1:= pos('@END',UpCase(str8));
    if (b1=1) and (m>1) then b2:=1;
    if (b1<>0) and (m>1) then begin delete(str8,b1,length(str8)-b1+1); if m>1 then close(tpfl^ [m]); endstring:=true;
        if m>1 then dec(m) end
@@ -635,7 +523,9 @@ end;
  for k:=tplcount-9 to tplcount do
  if tplar[k,1]='@' then
   begin
-   b1:= pos(strupcase(tplconst[k]),strupcase(str8));
+
+   b1:= pos(UpCase(tplconst[k]),UpCase(str8));
+
    if b1<>0 then
     begin
      tplara^ [m]:=copy(str8,b1+length(tplconst[k]),length(str8)-b1-length(tplconst[k]));
@@ -645,11 +535,8 @@ end;
      reset(tpfl^ [m]);
      if ioresult<>0 then begin
       str7:=getctlvaluelite('TEMPLATEPATH');
-      if str7[length(str7)]<> {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then str7:=str7+ {$IFDEF LINUX} 
-'/' {$ELSE} '\' {$ENDIF};
-      str7:=str7+copy(tplar[k],2,length(tplar[k])-1);
+     if str7='' then str7:=IncludeTrailingPathDelimiter(GetCurrentDir)+copy(tplar[k],2,length(tplar[k])-1) else 
+        str7:=ExtractFilePath(IncludeTrailingPathDelimiter(str7))+copy(tplar[k],2,length(tplar[k])-1);
       assign(tpfl^ [m],str7);
       reset(tpfl^ [m]);
       if ioresult<>0 then
@@ -698,82 +585,10 @@ begin
  if wore=0 then tplar[numg]:= '0 (none)' else tplar[numg]:= xstr(wore);
  if tplar[2]='0 (none)' then tplar[11]:='ok'
 end;
-
-Procedure registration;
-var
- k,ch2,ch4,ch6: byte;
- hex1,hex2,hex3: string;
- regname,regstring: string;
- aaa: longint;
-
-BEGIN
- regname:=getctlvalue('REGISTERNAME');
- regstring:=getctlvalue('REGISTERKEY');
- hex2:=regname;
- regname:=regname+regstring;
- aaa:=342453534;
- for i:=1 to length(regname)-8 do
-  begin
-  if i=length(regname)-8 then if (aaa=-12953656) or (aaa=812315) then exit;
-  if i mod 2 = 0 then aaa:=aaa*ord(regname[i]) else aaa:=aaa div ord(regname[i]);
- end;
- hex1:=hexl(aaa);
- if hex1<>copy(regname,length(regname)-7,8) then exit;
-
- hex3:='Q#';
-
- for k:=1 to 18 do
-begin
-
- ch1:=regstring[k];
- case ch1 of
-   'A': i:=10;
-   'B': i:=11;
-   'C': i:=12;
-   'D': i:=13;
-   'E': i:=14;
-   'F': i:=15;
-  else i:= xval(ch1);
- end; {case}
-
- inc(k);
-
- ch1:=regstring[k];
- case ch1 of
-   'A': j:=10;
-   'B': j:=11;
-   'C': j:=12;
-   'D': j:=13;
-   'E': j:=14;
-   'F': j:=15;
-  else j:= xval(ch1);
- end; {case}
-
- case k of
-   2,8,14: ch2:=i*16+j;
-   4,10,16: ch4:=i*16+j-ch2;
-   6,12,18: begin ch6:=i*16+j-ch2;
-           hex3:=hex3+chr(ch2+ch4+ch6)
-           end;
- end; {case}
-
-end;
-
- ch1:= regstring[19];
- case ch1 of
-   '1': hex3:=hex3+'A';
-   '2': hex3:=hex3+'B';
-   '3': hex3:=hex3+'C'
-  end; {case}
-
- serial:=hex3;
- owner:=hex2;
-end;
-
 function readunixln(var f: file; var buffer: string): boolean;
 var
     pos: longint;
-    actualread: {$IFDEF VIRTUALPASCAL} longint {$ELSE} word {$ENDIF};
+    actualread: longint;
     len: byte;
 begin
     pos:=filepos(f);
@@ -845,15 +660,15 @@ begin
                   else
                     delete(stri,b1-1,1);
 end;}
- b1:= pos('@END',strupcase(stri));
+ b1:= pos('@END',UpCase(stri));
  if b1<>0 then begin delete(stri,b1,length(stri)-b1+1); endflag:=true end;
-{ writeln(strupcase(stra));}
+{ writeln(UpCase(stra));}
 
  stra:=stri;
 
  for h:=1 to tplcount do
   begin
-   b1:= pos(tplconst[h],strupcase(stra));
+   b1:= pos(tplconst[h],UpCase(stra));
    if b1<>0 then
     begin
 {  writeln(tplconst[h]);}
@@ -872,7 +687,7 @@ end;
 Procedure setmsgflags;
 var flagstr,s1,attribs: string;
 begin
-  flagstr:= strupcase(getctlvaluelite('ATTRIBUTES'));
+  flagstr:= UpCase(getctlvaluelite('ATTRIBUTES'));
   if flagstr='' then flagstr:='LOC PVT';
   attribs:='';
   repeat
@@ -910,14 +725,14 @@ Begin
 
  if lite then exit;
 
- if strupcase(str4)='-L' then ertplname:='PNTLSTERRTPL' else ertplname:='ERRORTEMPLATE';
+ if UpCase(str4)='-L' then ertplname:='PNTLSTERRTPL' else ertplname:='ERRORTEMPLATE';
 
 (*
  if tplname='' then tplname:=
 {$IFDEF FPC}
 {$IFDEF WIN32}  'PNTCHKW.EXE'; {$ENDIF}
 {$IFDEF EMX}    'PNTCHKE.EXE'; {$ENDIF}
-{$IFDEF DOS32}  'PNTCHKP.EXE'; {$ENDIF}
+{$IFDEF DPMI}  'PNTCHKP.EXE'; {$ENDIF}
 {$IFDEF LINUX}  {$IFDEF FREEBSD} 'pntchk.bsd' {$ELSE} 'pntchk.lnx' {$ENDIF}; {$ENDIF}
 {$ELSE}
 'PNTCHK.EXE';
@@ -926,9 +741,7 @@ Begin
 
 if not closev then begin
  str1:=getctlvaluelite('TEMPLATEPATH');
- if copy(str1,length(str1),1)<> {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF}
-    then str1:=str1+ {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} ;
-
+ str1:=ExtractFilePath(IncludeTrailingPathDelimiter(str1));
  {$I-}
 
 if (((tplar[2]='1') and (tplar[3]='0 (none)')) or ((tplar[3]='1') and (tplar[2]='0 (none)'))) then
@@ -973,8 +786,8 @@ if (((tplar[2]='1') and (tplar[3]='0 (none)')) or ((tplar[3]='1') and (tplar[2]=
    repeat
     readln(templfl,pth2);
     pth2:=tplstring(pth2);
-   until (pos('REASON',strupcase(pth2))<>0) or eof(templfl);
-   if (pos('REASON',strupcase(pth2))<>0) and eof(templfl) then begin
+   until (pos('REASON',UpCase(pth2))<>0) or eof(templfl);
+   if (pos('REASON',UpCase(pth2))<>0) and eof(templfl) then begin
       logmsg('!','Invalid NDLERROR template : '+str1);
       goto lb1
      end;
@@ -984,7 +797,7 @@ if (((tplar[2]='1') and (tplar[3]='0 (none)')) or ((tplar[3]='1') and (tplar[2]=
  lb1:
 
  close(templfl);
-{ if strupcase(tplname)<>'PNTCHK.EXE' then}
+{ if UpCase(tplname)<>'PNTCHK.EXE' then}
   logmsg('[','Using template : '+tplname);
 end;
 
@@ -993,10 +806,10 @@ end;
   if (((tplar[2]='1') and (tplar[3]='0 (none)')) or ((tplar[3]='1') and (tplar[2]='0 (none)'))) and (not closev) then
     begin
   { Get directory name from ctl file }
-  getdir(0,pth2);
+  pth2:= GetCurrentDir;
   pth1:= GetCTLValueLite ('NETMAIL');
-  if copy(pth1,length(pth1),1)={$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} then delete(pth1,length(pth1),1);
-  if pth1='' then pth1:=pth2;
+  if pth1='' then pth1:=pth2 else 
+        pth1:=ExtractFileDir(IncludeTrailingPathDelimiter(pth1));
   chdir(pth1);
   if IOResult <> 0 then haltonerror(
     'Cannot find netmail directory : '+GetCTLValueLite ('NETMAIL'),netmailnotfound);
@@ -1004,8 +817,8 @@ end;
    Net.NetmailPath:=pth1;
 
   st1:= getctlvalue('TEMPDIR');
-  if st1<>'' then if st1[length(st1)]<> {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} then st1:=st1+ {$IFDEF LINUX} '/'
-                                        {$ELSE} '\' {$ENDIF} ;
+  if st1='' then st1:=GetCurrentDir else 
+        st1:=ExtractFileDir(IncludeTrailingPathDelimiter(st1));
 {  st2:= getctlvalue('TEMPFILE');
   if st2='' then} st2:='MSG_TMP.FFF';
   assign(tempfl2 , st1+st2);
@@ -1064,7 +877,8 @@ end;
   close(tempfl2);
 
 
-  getdir(0,pth2);
+//  getdir(0,pth2);
+  pth2:=GetCurrentDir;
   pth1:= GetCTLValueLite ('NETMAIL');
 
 {---------------------------------------------------------}
@@ -1075,9 +889,8 @@ else
 
  begin
 
-  if pth1[length(pth1)]= {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then delete(pth1,length(pth1),1);
+  if pth1='' then pth1:=GetCurrentDir else 
+        pth1:=ExtractFileDir(IncludeTrailingPathDelimiter(pth1));
   if pth1='' then pth1:=pth2;
   Net.NetmailPath:=pth1;
 
@@ -1096,12 +909,11 @@ else
 {   Net.SetPvt(True);
    Net.SetLoc(True);}
    setmsgflags;
-   Net.MsgText.Putstring('PID: '+nameprog+' v'+version+' '+serial);
+   Net.MsgText.Putstring('PID: '+nameprog+' v'+version{+' '+serial});
 
    endflag:=false;
 
   str1:=createtpl(getctlvaluelite(ertplname));
-
 
   assign(ertpl,str1);
 
@@ -1190,7 +1002,7 @@ end;
 {   Net.SetPvt(True);
    Net.SetLoc(True);}
    setmsgflags;
-   Net.MsgText.Putstring('PID: '+nameprog+' v'+version+' '+serial);
+   Net.MsgText.Putstring('PID: '+nameprog+' v'+version{+' '+serial});
 
  reset(ertpl);
 
@@ -1264,9 +1076,8 @@ end;
 
 
   erase(tempfl2);
- if strupcase(copy(getctlvaluelite('ONLYONEREPORT'),1,1))='Y' then
-if getctlvaluelite('NETMAIL')<>'' then logmsg('{','Reporting to the netmail folder : '+pth1+
-                                              {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} );
+ if UpCase(copy(getctlvaluelite('ONLYONEREPORT'),1,1))='Y' then
+if getctlvaluelite('NETMAIL')<>'' then logmsg('{','Reporting to the netmail folder : '+IncludeTrailingPathDelimiter(pth1));
 {   logmsg('#','Reporting to netmail folder : '+pth1)}
   end;
 
@@ -1278,7 +1089,7 @@ End;
 function NumOfNode(InStr:string): integer;
 
 var
- i,j: {$IFDEF VIRTUALPASCAL} LongInt {$ELSE} Integer {$ENDIF};
+ i,j: LongInt;
  TmpStr: string;
 
 begin
@@ -1372,11 +1183,11 @@ var
  LongVar, longvar2, crc1, crc2, ndltime: longint;
  Str1, str3, str4, ndlname: string;
  num: word;
- dirinfo: searchrec;
+ Tdirinfo: Tsearchrec;
  byteara:  ^bytetype;
  fileposar,fileposar1,fileposar2: ^filepostype;
  seekp: longint;
- byteread: {$IFDEF VIRTUALPASCAL} LongInt {$ELSE} word {$ENDIF};
+ byteread: LongInt;
  but1,but: byte;
 
 begin
@@ -1388,10 +1199,25 @@ begin
  str2:= getctlvaluelite('NODELIST');
  if str2 <> '' then
   begin
-    fsplit(str2,str1,tplar[1],str3);
-    if str3='.999' then str4:='.*' else str4:=str3;
-    findfirst(str1+tplar[1]+str4,$27,dirinfo);
-    if doserror<>0 then
+    str1:=ExtractFilePath(str2);
+    tplar[1]:=ChangeFileExt(ExtractFileName(str2),'');
+    str3:=ExtractFileExt(str2);
+   if str3='.999' then str4:='.*' else str4:=str3;
+    if SysUtils.findfirst(str1+tplar[1]+str4,faAnyFile,Tdirinfo)=0 then
+     begin
+     repeat
+     str1:=ExtractFilePath(tdirinfo.name);
+     tplar[1]:=ChangeFileExt(ExtractFileName(tdirinfo.name),'');
+     str4:=ExtractFileExt(tdirinfo.name);
+     if ((str3='.999') and (xval(copy(str4,2,length(str4)-1))<>-1)) or (str3<>'.999') then
+        if ndltime<Tdirinfo.time then
+           begin
+             ndltime:=Tdirinfo.time;
+             ndlname:=Tdirinfo.name
+           end;
+     Until Sysutils.FindNext(Tdirinfo)<>0;
+     Sysutils.FindClose(TdirInfo);
+     end else
      begin
       logmsg ('!','Unable to open nodelist file : '+str2);
       logmsg ('!','Nodelist checking is disabled');
@@ -1400,21 +1226,9 @@ begin
       exit
      end;
 
-    while doserror=0 do
-     begin
-       fsplit(dirinfo.name,str1,tplar[1],str4);
-       if ((str3='.999') and (xval(copy(str4,2,length(str4)-1))<>-1)) or (str3<>'.999') then
-         if ndltime<dirinfo.time then
-            begin
-              ndltime:=dirinfo.time;
-              ndlname:=dirinfo.name
-            end;
-       findnext(dirinfo);
-     end;
-
-     {$IFDEF VIRTUALPASCAL} findclose(dirinfo); {$ENDIF}
-
-    fsplit(str2,str1,tplar[1],str3);
+    str1:=ExtractFilePath(str2);
+    tplar[1]:=ChangeFileExt(ExtractFileName(str2),'');
+    str3:=ExtractFileExt(str2);
     if ndlname='' then ndlname:=tplar[1]+str3;
     tplar[1]:= ndlname;
 {    tplar[1]:= tplar[1]+str3;}
@@ -1660,11 +1474,15 @@ if (i>0) and ((copy(str1,1,5)<>'Host,') and (copy(str1,1,7)<>'Region,') and (cop
    end; {case}
 {write('Nummer: ',num,' num mod 8 ', num mod 8,' num div 8 ',num div 8,' Bytevar: ',but1,' + ',but,' -> ');}
 
+// writeln('before but1 =',but1,' but =',but,' OR =',(but or but1));
+but1:= but or but1;
+(*{$ASMMODE intel}
    asm
      mov  ah,but1
      or   ah,but
      mov  but1,ah
-   end;
+   end; *)
+// writeln('after   but1 =',but1,' but =',but);
 
 runerror('readnodelist',14);
 
@@ -1745,11 +1563,15 @@ begin
      6: but:= $40;
      7: but:= $80;
    end; {case}
-   asm
+
+// writeln('before but =',but,' bytevar =',bytevar,' AND =',(bytevar and but));
+(*   asm
      mov ah, but
      and ah, bytevar
      mov but, ah
-   end;
+   end; *)
+   but:=bytevar and but;
+// writeln('after  but =',but,' bytevar =',bytevar);
   if but<>0 then boolar^ [(i-1)*8+j]:= true else boolar^ [(i-1)*8+j]:= false;
   end;
 
@@ -1849,32 +1671,32 @@ begin
  case bytevar of
    0: begin
         logmsg('&','Node '+indexstr+' is ABSENT in the current nodelist : '+tplar[1]);
-        sendstr:= strupcase(getctlvaluelite('ABSENTPOINTS'));
+        sendstr:= UpCase(getctlvaluelite('ABSENTPOINTS'));
         if sendstr<>'YES' then incerror(true);
       end;
    1: begin
         logmsg('&','Node '+indexstr+' has NORMAL status in the current nodelist : '+tplar[1]);
-        sendstr:= strupcase(getctlvaluelite('NORMALPOINTS'));
+        sendstr:= UpCase(getctlvaluelite('NORMALPOINTS'));
         if sendstr<>'YES' then incerror(true);
       end;
    2: begin
         logmsg('&','Node '+indexstr+' has DOWN status in the current nodelist : '+tplar[1]);
-        sendstr:= strupcase(getctlvaluelite('DOWNPOINTS'));
+        sendstr:= UpCase(getctlvaluelite('DOWNPOINTS'));
         if sendstr<>'YES' then incerror(true);
       end;
    3: begin
         logmsg('&','Node '+indexstr+' has HOLD status in the current nodelist : '+tplar[1]);
-        sendstr:= strupcase(getctlvaluelite('HOLDPOINTS'));
+        sendstr:= UpCase(getctlvaluelite('HOLDPOINTS'));
         if sendstr<>'YES' then incerror(true);
       end;
    4: begin
         logmsg('&','Node '+indexstr+' has HUB flag in the current nodelist : '+tplar[1]);
-        sendstr:= strupcase(getctlvaluelite('HUBPOINTS'));
+        sendstr:= UpCase(getctlvaluelite('HUBPOINTS'));
         if sendstr<>'YES' then incerror(true);
       end;
    5: begin
         logmsg('&','Node '+indexstr+' has PVT flag in the current nodelist : '+tplar[1]);
-        sendstr:= strupcase(getctlvaluelite('PVTPOINTS'));
+        sendstr:= UpCase(getctlvaluelite('PVTPOINTS'));
         if sendstr<>'YES' then incerror(true);
       end;
   end; {case}
@@ -2033,9 +1855,9 @@ begin
 
   for i:=1 to formcount do
    begin {for(i)}
-     pora:=strupcase(segmentformat[i]);
+     pora:=UpCase(segmentformat[i]);
 {     for j:=1 to length(pora) do if pora[j]='.' then delete(pora,j,1);}
-     pora2:=strupcase(tplar[8]);
+     pora2:=UpCase(tplar[8]);
      feda:=0;
      ada:=0;
      ter:=length(pora2)+1;
@@ -2086,7 +1908,7 @@ begin
    tplar[16]:=segmentformat[dur];
 
    if ada>0 then
-     if (i<>1) and ((strupcase(copy(getctlvaluelite('RENAMESEGMENT'),1,1))='Y')) then
+     if (i<>1) and ((UpCase(copy(getctlvaluelite('RENAMESEGMENT'),1,1))='Y')) then
        begin
      if plokho then plokho:=false;
      pora2:=test(ada,segmentformat[1]);
@@ -2113,6 +1935,9 @@ var
 Procedure bosscheck;
 begin
  {@idealstring} tplar[17]:='Boss,'+tplar[19];
+// writeln('tplar[15] =',tplar[15]);
+// writeln('tplar[17] =',tplar[17]);
+// writeln('tplar[19] =',tplar[19]);
   tplar[15]:=s1; {@currentstring}
     if tplar[15]<>tplar[17] then begin
                incerror(true);
@@ -2298,7 +2123,7 @@ if getctlvalue('ADDEDFLAGS')<>'' then begin
  st1:=getctlvalue('ADDEDFLAGS');
  for j:=1 to i do splitstring(st1,st2,st1);
  if (st2='-') or ((st2='') and (st1='-')) then
- if (strupcase(copy(getctlvalue('NOFLAG'),1,1))='N') then goto lab7
+ if (UpCase(copy(getctlvalue('NOFLAG'),1,1))='N') then goto lab7
   else begin addedflagpr:=false; exit end;
  if st2<>'' then tplar[36]:=','+st2+',' else tplar[36]:=','+st1+','
 end
@@ -2371,7 +2196,7 @@ begin {readsegment}
   if (st2='') and (st1<>tplar[26]) then {@speed}
    begin
      if tplar[20]='is unknown' then postr:='' else postr:=tplar[20]+' ';
-     if strupcase(copy(getctlvalue('CHANGEBAUD'),1,1))='Y'
+     if UpCase(copy(getctlvalue('CHANGEBAUD'),1,1))='Y'
        then
          begin
      logmsg('#','(W) '+postr+'Unexpected baud rate "'+tplar[26]+'" was changed to "'+tplar[38]+'"');
@@ -2405,7 +2230,7 @@ begin {readsegment}
 
   ok:=false;
 {;  FindFirstParameter('PHONENUMBER');
-;  if strupcase(copy(getctlvalue('CHANGEPHONE'),1,1))='Y' then tplar[34]:=currentctlvalue else tplar[34]:=tplar[24];
+;  if UpCase(copy(getctlvalue('CHANGEPHONE'),1,1))='Y' then tplar[34]:=currentctlvalue else tplar[34]:=tplar[24];
 ;  FormCount:=0;
 ;  if not MoreParameters then MoreParameters:=True;
 ;  Repeat
@@ -2415,7 +2240,7 @@ begin {readsegment}
 ;  Until (FormCount=20) or not(MoreParameters) or ok;}
 
   FindFirstParameter('PHONENUMBER');
-  if strupcase(copy(getctlvalue('CHANGEPHONE'),1,1))='Y' then 
+  if UpCase(copy(getctlvalue('CHANGEPHONE'),1,1))='Y' then 
     begin 
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
@@ -2437,7 +2262,7 @@ begin {readsegment}
 
   if not ok then
     begin
-     if strupcase(copy(getctlvalue('CHANGEPHONE'),1,1))<>'Y'
+     if UpCase(copy(getctlvalue('CHANGEPHONE'),1,1))<>'Y'
        then
          begin
            if tplar[20]='is unknown' then postr:='' else postr:=tplar[20]+' ';
@@ -2486,7 +2311,7 @@ begin {readsegment}
 
   ok:=false;
   FindFirstParameter('LOCATION');
-  if strupcase(copy(getctlvalue('CHANGELOCATION'),1,1))='Y' then 
+  if UpCase(copy(getctlvalue('CHANGELOCATION'),1,1))='Y' then 
     begin 
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
@@ -2508,7 +2333,7 @@ begin {readsegment}
 
   if not ok then
 begin
-  if strupcase(copy(getctlvalue('CHANGELOCATION'),1,1))<>'Y' then
+  if UpCase(copy(getctlvalue('CHANGELOCATION'),1,1))<>'Y' then
    begin
      if tplar[20]='is unknown' then postr:='' else postr:=tplar[20]+' ';
      logmsg('#','(E) '+postr+'Invalid location "'+tplar[23]+'"');
@@ -2556,7 +2381,7 @@ begin {system}
 
   ok:=false;
 
-  if strupcase(copy(getctlvalue('CHANGESYSTEM'),1,1))='Y' then 
+  if UpCase(copy(getctlvalue('CHANGESYSTEM'),1,1))='Y' then 
     begin 
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
@@ -2578,7 +2403,7 @@ begin {system}
 
   if not ok then
 begin
-  if strupcase(copy(getctlvalue('CHANGESYSTEM'),1,1))='N' then
+  if UpCase(copy(getctlvalue('CHANGESYSTEM'),1,1))='N' then
    begin
      if tplar[20]='is unknown' then postr:='' else postr:=tplar[20]+' ';
      logmsg('#','(E) '+postr+'Invalid system name "'+tplar[21]+'"');
@@ -2608,7 +2433,7 @@ begin
     else
         error(getctlvaluelite('SYSTEMERRTPL'),false,0);
 
-  if strupcase(copy(getctlvalue('CHANGESYSTEM'),1,1))='Y' then
+  if UpCase(copy(getctlvalue('CHANGESYSTEM'),1,1))='Y' then
      logmsg('#','The system name field was changed to "'+tplar[46]+'"') end
    end
 
@@ -2624,7 +2449,7 @@ begin {sysop}
 
   ok:=false;
 
-  if strupcase(copy(getctlvalue('CHANGESYSOP'),1,1))='Y' then 
+  if UpCase(copy(getctlvalue('CHANGESYSOP'),1,1))='Y' then 
     begin 
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
@@ -2646,7 +2471,7 @@ begin {sysop}
 
   if not ok then
 begin
-  if strupcase(copy(getctlvalue('CHANGESYSOP'),1,1))='N' then
+  if UpCase(copy(getctlvalue('CHANGESYSOP'),1,1))='N' then
    begin
      if tplar[20]='is unknown' then postr:='' else postr:=tplar[20]+' ';
      logmsg('#','(E) '+postr+'Invalid sysop name "'+tplar[22]+'"');
@@ -2676,7 +2501,7 @@ begin
     else
         error(getctlvaluelite('SYSOPERRTPL'),false,0);
 
-  if strupcase(copy(getctlvalue('CHANGESYSOP'),1,1))='Y' then
+  if UpCase(copy(getctlvalue('CHANGESYSOP'),1,1))='Y' then
      logmsg('#','The sysop name field was changed to "'+tplar[47]+'"') end
    end
 
@@ -2688,13 +2513,13 @@ end
 
  if (tplar[27]='')
       and
-    (((strupcase(copy(getctlvalue('NOFLAG'),1,1))<>'Y')
+    (((UpCase(copy(getctlvalue('NOFLAG'),1,1))<>'Y')
        or
-      ((strupcase(copy(getctlvalue('NOFLAG'),1,1))='Y')
+      ((UpCase(copy(getctlvalue('NOFLAG'),1,1))='Y')
         and
  (copy(tplar[15],length(tplar[15])-length(tplar[26]),length(tplar[26])+1)<>tplar[26]+','))))
   then
-    if (strupcase(copy(getctlvalue('NOFLAG'),1,1))='A')
+    if (UpCase(copy(getctlvalue('NOFLAG'),1,1))='A')
       then
         begin
           if addedflagpr
@@ -2765,7 +2590,7 @@ end
  h:=0;
  repeat
   inc(h);
-  if (flagar^ [h]='U') or ((strupcase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y') and (flagar^ [h]='u')) then
+  if (flagar^ [h]='U') or ((UpCase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y') and (flagar^ [h]='u')) then
    begin
    flut:=flagar^ [h,1];
    repeat
@@ -2804,7 +2629,7 @@ end
   h:=0;
   repeat
    inc(h);
-   if strupcase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then tplar[29]:= strupcase(flagar^ [h])
+   if UpCase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then tplar[29]:= UpCase(flagar^ [h])
         else tplar[29]:= flagar^ [h];
 
    i:=0;
@@ -2823,7 +2648,7 @@ end
    tplar[29]:= flagar^ [h];
 
    if not ok then
-     if ((strupcase(copy(getctlvalue('REMOVEBADFLAGS'),1,1))='Y')) then
+     if ((UpCase(copy(getctlvalue('REMOVEBADFLAGS'),1,1))='Y')) then
        begin
 {         tplar[29]:= flagar^ [j];}
          st2:=flagar^ [h];
@@ -2973,7 +2798,7 @@ lb1:
 
      if tplar[20]='is unknown' then postr:='' else postr:=tplar[20]+' ';
      logmsg('#','(W) '+postr+'Unknown flag "'+tplar[29]+'" was removed from your segment');
-if (tplar[36]=',') and ((strupcase(copy(getctlvalue('NOFLAG'),1,1))='N') or (strupcase(copy(getctlvalue('NOFLAG'),1,1))='A'))
+if (tplar[36]=',') and ((UpCase(copy(getctlvalue('NOFLAG'),1,1))='N') or (UpCase(copy(getctlvalue('NOFLAG'),1,1))='A'))
 then begin
      if not addedflagpr then goto lb2;
      logmsg('$','No flags in the pointlist line. Default flag "'+tplar[39]+'" was added')
@@ -3019,14 +2844,14 @@ lb2:
   h:=0;
   repeat
    inc(h);
-   if strupcase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then tplar[29]:= strupcase(flagar^ [h])
+   if UpCase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then tplar[29]:= UpCase(flagar^ [h])
         else tplar[29]:= flagar^ [h];
 
    i:=h;
    repeat
     inc(i);
 
-   if strupcase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then st2:= strupcase(flagar^ [i])
+   if UpCase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then st2:= UpCase(flagar^ [i])
         else st2:= flagar^ [i];
 
        st4:=st2;
@@ -3036,7 +2861,7 @@ lb2:
          if grepmatch(st4,tplar[29]) then
 begin
 
-   if ((strupcase(copy(getctlvalue('REMOVEBADFLAGS'),1,1))='Y')) then
+   if ((UpCase(copy(getctlvalue('REMOVEBADFLAGS'),1,1))='Y')) then
        begin
 {         tplar[29]:= flagar^ [h];}
          st2:=flagar^ [h];
@@ -3180,7 +3005,7 @@ writeln('h= ',h);
   h:=0;
   repeat
    inc(h);
-   if strupcase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then tplar[29]:= strupcase(flagar^ [h])
+   if UpCase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y' then tplar[29]:= UpCase(flagar^ [h])
         else tplar[29]:= flagar^ [h];
 
    i:=0;
@@ -3196,9 +3021,9 @@ if st1<>'' then tplar[30]:=st1 else tplar[30]:=st2;
        j:=0;
        repeat
          inc(j); if j=h then inc(j);
-         if strupcase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y'
+         if UpCase(copy(getctlvalue('UPPERCASEFLAGS'),1,1))='Y'
            then
-             tplar[29]:= strupcase(flagar^ [j])
+             tplar[29]:= UpCase(flagar^ [j])
            else
              tplar[29]:= flagar^ [j];
        if tplar[29]<>'' then
@@ -3206,7 +3031,7 @@ if st1<>'' then tplar[30]:=st1 else tplar[30]:=st2;
 begin
 tplar30:=tplar[30];
 tplar[30]:=flagar^ [h];
-     if ((strupcase(copy(getctlvalue('REMOVEBADFLAGS'),1,1))='Y')) then
+     if ((UpCase(copy(getctlvalue('REMOVEBADFLAGS'),1,1))='Y')) then
        begin
 {i:=0;
 repeat
@@ -3313,29 +3138,30 @@ end;
 
 procedure movet(param1,param2: string);
 { Simple, fast file copy program with NO error-checking }
-var
+ var
   FromF, ToF: file;
-  NumRead, NumWritten: {$IFDEF VIRTUALPASCAL } LongInt {$ELSE} Word {$ENDIF};
+  NumRead, NumWritten: LongInt;
   Buf: array[1..2048] of Char;
-  str1: string;
+  str1: string; 
 begin
   Assign(FromF, param1); { Open input file } {@segname}
 
 {  if copy(param2,2,1)=':' then begin}
-   getdir(0,str1);
-   if (copy(str1,length(str1),1)<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ) then str1:=str1+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF};
-   if copy(param1,2,1)<>':' then param1:=str1+param1;
-   
-{$IFNDEF LINUX} if strupcase(copy(param1,1,2))<>strupcase(copy(param2,1,2)) then
- {$ENDIF}
+   str1:=IncludeTrailingPathDelimiter(GetCurrentDir);
+// writeln('str1 =',str1);
+
+// writeln('str1 =',str1);
+//   if copy(param1,2,1)<>':' then param1:=str1+param1;
+// writeln('param1 =',param1);
+// writeln('param2 =',param2);
+// writeln(UpCase(copy(param1,1,2)));
+// writeln(UpCase(copy(param2,1,2)));
+
+{$IF DEFINED(UNIX) OR DEFINED(DPMI) OR DEFINED(MSDOS) OR DEFINED(OS2)}
+if UpCase(copy(param1,1,2))<>UpCase(copy(param2,1,2)) then
      begin
   Reset(FromF, 1);  { Record size = 1 }
- 
-  runerror('movet',1);  
+  runerror('movet',1);
   
   Assign(ToF, Param2); { Open output file }
   Rewrite(ToF, 1);  { Record size = 1 }
@@ -3349,21 +3175,16 @@ begin
   until (NumRead = 0) or (NumWritten <> NumRead);
   
  runerror('movet',3);  
-  
   Close(FromF);
-  
- runerror('movet',4);  
-  
+ runerror('movet',4);
   Close(ToF);
-  
- runerror('movet',5);  
-  
-  erase(fromf);
+ runerror('movet',5);
+//  erase(fromf);
+DeleteFile(Param1);
   exit
   end;
-  
- rename(fromf,param2)
-;
+{$ENDIF}
+ RenameFile(param1,param2);
  runerror('movet',6);
  
 end;
@@ -3372,7 +3193,7 @@ procedure copys(param1,param2: string);
 { Simple, fast file copy program with NO error-checking }
 var
   FromF, ToF: file;
-  NumRead, NumWritten: {$IFDEF VIRTUALPASCAL } LongInt {$ELSE} Word {$ENDIF};
+  NumRead, NumWritten: LongInt;
   Buf: array[1..2048] of Char;
 begin
   Assign(FromF, param1); { Open input file } {@segname}
@@ -3385,9 +3206,8 @@ begin
     BlockWrite(ToF, Buf, NumRead, NumWritten);
   until (NumRead = 0) or (NumWritten <> NumRead);
   Close(FromF);
-  setftime(ToF,ftime);
-  
   Close(ToF);
+  FileSetDate(Param2,tftime);
 end;
 
 Function admchar(first: char; cha1: string): boolean;
@@ -3399,8 +3219,7 @@ begin
  end
  else
 
- if ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('CHECKCOMMENTS')[1])
-        {$ELSE}strupcase(copy(getctlvalue('CHECKCOMMENTS'),1,1)){$ENDIF}='N')
+ if (upcase(getctlvalue('CHECKCOMMENTS')[1])='N')
    then
      sq1:='*'
    else
@@ -3417,24 +3236,21 @@ end;
 begin { genuine readsegment }
  pth1:= GetCTLValueLite ('BACKUPDIR');
  if pth1<>'' then begin
-  getdir(0,pth2);
-  if copy(pth1,length(pth1),1)={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then delete(pth1,length(pth1),1);
-  chdir(pth1);
+  pth2:=GetCurrentDir;
+  pth1:=ExtractFilePath(IncludeTrailingPathDelimiter((pth1)));
+  chdir(ExtractFileDir(pth1));
   if IOResult <> 0 then haltonerror(
-    'Cannot find backup directory : '+pth1+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,backupnotfound)
+    'Cannot find backup directory : '+pth1,backupnotfound)
   else
   begin
    chdir(pth2);
-   logmsg('@','Copying segment file to the backup directory : '+pth1+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} );
-   copys(tplar[33],pth1+{$IFDEF LINUX} 
+   logmsg('@','Copying segment file to the backup directory : '+pth1);
+// WTF???
+(*   copys(tplar[33],pth1+{$IFDEF LINUX} 
 '/' + StrDownCase(tplar[8]) {$ELSE} 
 '\' + tplar[8] {$ENDIF}) 
+*)
+copys(tplar[33],pth1+tplar[8]);
   end
  end;
 
@@ -3443,17 +3259,13 @@ begin { genuine readsegment }
  first:=true;
  new(numpoint);
  s:=getctlvalue('BETWEENCOMMENTS');
- if ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='Y') or
-    ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='S') or
-    ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='E') or
-    ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='W')
+ if (upcase(getctlvalue('READUNIXLINES')[1])='Y') or
+    (upcase(getctlvalue('READUNIXLINES')[1])='S') or
+    (upcase(getctlvalue('READUNIXLINES')[1])='E') or
+    (upcase(getctlvalue('READUNIXLINES')[1])='W')
  then unixlines:=true
  else unixlines:=false;
- {$IFDEF LINUX} if strupcase(str4)='-L' then unixlines:=false; {$ENDIF}
+ {$IFDEF UNIX} if UpCase(str4)='-L' then unixlines:=false; {$ENDIF}
   assign(f, tplar[33]);
   if unixlines
     then
@@ -3477,8 +3289,7 @@ begin { genuine readsegment }
  for i:=1 to length(tplar[15]) do
   if (not admchar(tplar[15,1],tplar[15,i])) 
      or ((tplar[15,i-1]=';') and (tplar[15,i]='`') and 
-        ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('NODELIFECOMPAT')[1])
-        {$ELSE}strupcase(copy(getctlvalue('NODELIFECOMPAT'),1,1)){$ENDIF}='Y'))
+        (upcase(getctlvalue('NODELIFECOMPAT')[1])='Y'))
 
 then
    begin
@@ -3514,10 +3325,8 @@ then
     else
        close(f);
  waserr:=false;
-
  for ii:=1 to 32767 do begin numpoint^ [ii,1]:=false; numpoint^ [ii,2]:=false end;
  ii:=0;
-
   if unixlines
     then
        reset(ff,1)
@@ -3535,6 +3344,7 @@ then
    if numpoint^ [ii,1] and (not numpoint^ [ii,2]) then
      numpoint^ [ii,2]:=true
    else numpoint^ [ii,1]:= true;
+
   if unixlines
     then
       eoff:=(filepos(ff)=0)
@@ -3546,7 +3356,6 @@ then
        close(ff)
     else
        close(f);
-
  for ii:=1 to 32767 do if numpoint^ [ii,1] and numpoint^ [ii,2] then
    begin
      tplar[20]:=tplar[19]+'.'+xstr(ii);
@@ -3583,15 +3392,10 @@ then
     else
        close(f);
     end;
-
  st2:= getctlvalue('TEMPDIR');
- if st2<>'' then if st2[length(st2)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then st2:=st2+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ;
+ if st2='' then st2:=IncludeTrailingPathDelimiter(GetCurrentDir) else 
+    st2:=ExtractFilePath(IncludeTrailingPathDelimiter(st2));
  st3:='PNT_TMP.FFF';
-
  assign(f1, st2+st3);
   if unixlines
     then
@@ -3605,20 +3409,17 @@ then
  repeat
   tplar[14]:=xstr(xval(tplar[14])+1);
   tplar[32]:=tplar[14];
-
   if unixlines
     then
       if readunixln(ff,tplar[15]) then
-  if {$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='W'
+  if upcase(getctlvalue('READUNIXLINES')[1])='W'
     then
         begin
           logmsg('#','(W) Incorrect format of segment line detected');
           incerror(false);
           error(getctlvalue('UNIXLINETPL'),false,0)
         end
-    else if {$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='E' then
+    else if upcase(getctlvalue('READUNIXLINES')[1])='E' then
      begin
       logmsg('#','(E) Incorrect format of segment line detected');
       incerror(true);
@@ -3628,7 +3429,8 @@ then
     else
       readln(f,tplar[15]);
   if length(tplar[15])=0 then
-  if strupcase(copy(getctlvalue('REMOVEEMPTYLINES'),1,1))='Y'
+
+  if UpCase(copy(getctlvalue('REMOVEEMPTYLINES'),1,1))='Y'
     then
      begin
       logmsg('|','Superfluous empty line was found and removed');
@@ -3665,8 +3467,7 @@ then
 {    end;}
 
  runerror('readsegment',3);
-
- movet(st2+st3, tplar[33]);
+movet(st2+st3, tplar[33]);
 
  runerror('readsegment',4);
 
@@ -3754,53 +3555,36 @@ end;
 Procedure checkage;
 var
    realage,time: longint;
+
 Function segage: word;
-const
-   days: array[1..12] of byte = (31,28,31,30,31,30,31,31,30,31,30,31);
 var
-   year, month, day, dow, curmonth, curyear :
-     {$IFDEF VIRTUALPASCAL} {$IFDEF FPC} Word {$ELSE} Longint {$ENDIF} {$ELSE} Word {$ENDIF};
-   filet: text;
-   pack: datetime;
+   fyear, fmonth, fday : Word;
    age: longint;
+
+// from DateUtils unit src
+Function DaysBetween(const ANow, AThen: TDateTime): longint;
+var DateTimeDiff,HalfMilliSecond: TDateTime;
+begin
+  HalfMilliSecond := TDateTime(1)/MSecsPerDay /2;
+  DateTimeDiff:= ANow - AThen;
+  if (ANow>0) and (AThen<0) then
+    DateTimeDiff:=DateTimeDiff-0.5
+  else if (ANow<-1.0) and (AThen>-1.0) then
+    DateTimeDiff:=DateTimeDiff+0.5;
+  if DateTimeDiff<0 then DaysBetween:=-1 else DaysBetween:=Trunc(Abs(DateTimeDiff)+HalfMilliSecond);
+end;
+
 begin
   age:=0;
-  GetDate(year,month,day,dow);
-  assign (filet, tplar[33]);
-  reset(filet);
-  getftime(filet,time);
-  unpacktime(time,pack);
-  close(filet);
-  if pack.year>year
-    then age:=-1
-    else
-      if pack.year=year
-        then
-          if pack.month>month
-            then age:=-1
-            else
-              if (pack.month=month) and (pack.day>day) then age:=-1;
-
-  if age>=0 then
-    begin
-      curmonth:=pack.month;
-      curyear:=pack.year;
-      age:=days[curmonth]-pack.day;
-      while (curmonth<month) or (curyear<year) do
-        begin
-          inc(curmonth); if curmonth=13 then begin curmonth:=1; inc(curyear) end;
-          age:=age+days[curmonth];
-          if (curmonth=2) and (curyear mod 4 =0) then age:=age+1
-        end;
-      age:=age-(days[curmonth]-day)
-     end
-    else
+  tftime:=FileAge(tplar[33]);
+  TDT:=FileDateTodateTime(tftime);
+  DecodeDate(TDT,fYear,fMonth,fDay);
+  age:=DaysBetween(now,TDT);
+  if age<0 then
       begin
         time:=-1;
-        pack.year:=year;
-        pack.month:=month;
-        pack.day:=day;
-        packtime(pack,ftime);
+	TDT:=ComposeDateTime(Now,EncodeTime(00,00,00,00)); 
+	tftime:=DateTimeToFileDate(TDT);
         age:=0;
       end; 
   segage:=age
@@ -3845,12 +3629,7 @@ Begin
 
  runerror('report',1);
 
- str1:=getctlvaluelite('TEMPLATEPATH');
- if copy(str1,length(str1),1)<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then str1:=str1+ {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ;
+ str1:=ExtractFilePath(IncludeTrailingPathDelimiter(getctlvaluelite('TEMPLATEPATH')));
  assign(templfl,str1+getctlvaluelite('NORMALTEMPLATE'));
  reset(templfl);
  if ioresult<>0 then begin
@@ -3860,11 +3639,8 @@ Begin
  close(templfl);
 
   { Get directory name from ctl file }
-  getdir(0,pth2);
-  pth1:= GetCTLValueLite ('NETMAIL');
-  if copy(pth1,length(pth1),1)= {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then delete(pth1,length(pth1),1);
+  pth2:=GetCurrentDir;
+  pth1:= ExtractFileDir(IncludeTrailingPathDelimiter(GetCTLValueLite ('NETMAIL')));
   if pth1='' then pth1:=pth2;
   chdir(pth1);
   if IOResult <> 0 then haltonerror(
@@ -3890,10 +3666,11 @@ Begin
 {   Net.SetPvt(True);
    Net.SetLoc(True);}
    setmsgflags;
-   Net.MsgText.Putstring('PID: '+nameprog+' v'+version+' '+serial);
+   Net.MsgText.Putstring('PID: '+nameprog+' v'+version{+' '+serial});
    endflag:=false;
    assign(templfl,createtpl(str1+getctlvaluelite('NORMALTEMPLATE')));
    reset(templfl);
+
    while not eof(templfl) do
      begin
        readln(templfl,pth2);
@@ -3911,9 +3688,7 @@ Begin
     '/'+xstr(addr.fromnode)+'.'+xstr(addr.frompoint)+')');
    Net.SaveMessageText;
    Net.CloseMsg;
-   logmsg('{','Reporting to the netmail folder : '+pth1+ {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} );
+   logmsg('{','Reporting to the netmail folder : '+IncludeTrailingPathDelimiter(pth1));
    logmsg('[','Using template : '+getctlvaluelite('NORMALTEMPLATE'));
   end;
 End;
@@ -3924,9 +3699,11 @@ procedure moves(param2: string);
 { Simple, fast file copy program with NO error-checking }
 var
   FromF, ToF: file;
-  NumRead, NumWritten: {$IFDEF VIRTUALPASCAL } LongInt {$ELSE} Word {$ENDIF};
+  NumRead, NumWritten: LongInt;
   Buf: array[1..2048] of Char;
 begin
+// writeln('target filename = ',param2);
+// writeln('tplar[33] = ',tplar[33]);
 
   Assign(FromF, tplar[33]); { Open input file } {@segname}
 {  if copy(param2,2,1)=':' then begin}
@@ -3935,10 +3712,9 @@ begin
      {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} ; *)
 {   if copy(param2,2,1)<>':' then param2:=str1+param2;}
 
-{$IFNDEF LINUX}  if strupcase(copy(tplar[33],1,2))<>strupcase(copy(param2,1,2)) then
- {$ENDIF}
+{$IF DEFINED(UNIX) OR DEFINED(DPMI) OR DEFINED(MSDOS) OR DEFINED(OS2)}
+  if UpCase(copy(tplar[33],1,2))<>UpCase(copy(param2,1,2)) then
      begin
-
   Reset(FromF, 1);  { Record size = 1 }
   Assign(ToF, Param2); { Open output file }
   Rewrite(ToF, 1);  { Record size = 1 }
@@ -3948,54 +3724,38 @@ begin
     BlockWrite(ToF, Buf, NumRead, NumWritten);
   until (NumRead = 0) or (NumWritten <> NumRead);
   Close(FromF);
-  setftime(ToF,ftime);
   Close(ToF);
-  erase(fromf);
+  FileSetDate(param2,tftime);
+  DeleteFile(tplar[33]);
   exit
 {   end}
   end;
-  
- Assign(ToF, Param2); { Open output file }
- Reset(ToF);  { Record size = 1 }
- if ioresult=0 then begin
-   close(tof);
-   erase(tof)
-  end;
- rename(fromf,param2);
- runerror('moves',1);
- reset(ToF);
- setftime(ToF,ftime);
- close(ToF)
+ {$ENDIF}
+
+ if FileExists(Param2) then DeleteFile(Param2);
+ RenameFile(tplar[33],param2);
+ FileSetDate(param2,tftime);
 end;
 
 var ter:integer;
- f1: file;
  pth1,pth2: string;
 begin
   {$I-}
-  getdir(0,pth2);
+  pth2:=GetCurrentDir;
   pth1:= GetCTLValueLite ('MASTER');
-  if (copy(pth1,length(pth1),1)= {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ) and (copy(pth1,2,length(pth1)-1)<>':\') then delete(pth1,length(pth1),1);
   if pth1='' then pth1:=pth2;
-  chdir(pth1);
+  chdir(ExtractFileDir(pth1));
   if IOResult <> 0 then haltonerror(
-    'Path to the master directory not found : '+pth1+ {$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,masternotfound);
+    'Path to the master directory not found : '+pth1,masternotfound);
 
  chdir(pth2);
 
- if (strupcase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and 
-    (strupcase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') 
+ if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and 
+    (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') 
    then begin
   pth1:= GetCTLValuelite ('BADFILES');
-  if (copy(pth1,length(pth1),1)={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ) and (copy(pth1,2,length(pth1)-1)<>':\') then delete(pth1,length(pth1),1);
   if pth1='' then pth1:=pth2;
-  chdir(pth1);
+  chdir(ExtractFileDir(pth1));
   if IOResult <> 0 then haltonerror(
     'Path to the badfiles directory not found : '+GetCTLValuelite ('BADFILES'),badfilesnotfound);
 
@@ -4007,85 +3767,62 @@ begin
    begin
      pth1:= GetCTLValueLite ('MASTER');
 
-     if strupcase(str4)='-L' then pth1:='';
+     if UpCase(str4)='-L' then pth1:='';
 
      if pth1<>'' then begin { pth1:=pth2;}
-     if copy(pth1,length(pth1),1)<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then pth1:=pth1+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ;
-     moves(pth1+{$IFDEF LINUX}StrDownCase(tplar[28]){$ELSE}tplar[28]{$ENDIF});
+     pth1:=ExtractFilePath(IncludeTrailingPathDelimiter(pth1));
+     moves(pth1+tplar[28]);
      if ioresult<>0 then haltonerror('Can''t move good segment file to the master directory : '+pth1,cantmove)
      else logmsg('<','Moving good segment file to the master directory : '+pth1)
     end
       else logmsg('<','Result of checking: segment is good.');
-
-   if strupcase(copy(getctlvaluelite('KILLBAD'),1,1))='I' then
+   if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))='I') or
+      (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))='A') or
+      (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))='Y') then
      begin
       pth1:= GetCTLValuelite ('BADFILES');
       if pth1='' then pth1:=pth2;
-      if pth1[length(pth1)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then pth1:=pth1+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
-;
+      pth1:=ExtractFilePath(IncludeTrailingPathDelimiter(pth1));
 
       for i:=1 to formcount do
        begin
 
        pth2:=segmentformat[i];
     for ter:=length(pth2) downto 1 do if (pth2[ter-1]<>'~') and (pth2[ter]<>'~') and (pth2[ter]<>'.') then pth2[ter]:='?';
-
-    findfirst(pth1+test(lk,pth2),$3F,dirinfo);
-      while doserror=0 do
-        begin
-
-      pth2:= pth1+dirinfo.name;
-        if exist(pth2) then
+    if Sysutils.findfirst(pth1+test(lk,pth2),faAnyFile,Tdirinfo)=0 then
          begin
-          assign(f1,pth2);
-          erase(f1);
-          if ioresult<>0 then logmsg('!','Can''t delete old bad segment file : '+pth2)
-          else logmsg('&','Deleting old bad segment file : '+pth2)
+          repeat
+          pth2:= pth1+Tdirinfo.name;
+           if FileExists(pth2) then
+            begin
+             if not DeleteFile(pth2) then logmsg('!','Can''t delete old bad segment file : '+pth2)
+             else logmsg('&','Deleting old bad segment file : '+pth2)
+            end;
+          Until Sysutils.FindNext(Tdirinfo)<>0;
+         Sysutils.FindClose(TDirInfo);
          end;
-
-
-         findnext(dirinfo);
-
-
-        end;
-
-     {$IFDEF VIRTUALPASCAL} findclose(dirinfo); {$ENDIF}
 
        end
       end
      end
     else
   if tplar[11] {@result} = 'bad' then
-   if (strupcase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and (strupcase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') then
+   if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') then
      begin
       pth1:= GetCTLValuelite ('BADFILES');
       if pth1<>'' then begin {pth1:=pth2;}
-      if copy(pth1,length(pth1),1)<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then pth1:=pth1+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
-;
-      moves(pth1+{$IFDEF LINUX}StrDownCase(tplar[28]){$ELSE}tplar[28]{$ENDIF});
-      if ioresult<>0 then haltonerror('Can''t move bad segment file to the badfiles directory : '+pth1,cantmove)
-      else logmsg('>','Moving bad segment file to the badfiles directory : '+pth1)
-     end
+      pth1:=ExtractFilePath(IncludeTrailingPathDelimiter(pth1));
+      moves(pth1+tplar[28]);
+       if ioresult<>0 then haltonerror('Can''t move bad segment file to the badfiles directory : '+pth1,cantmove)
+          else logmsg('>','Moving bad segment file to the badfiles directory : '+pth1)
+      end
       else logmsg('>','Result of checking: segment is bad.')
      end
-   else
-    begin
-     erase(f1);
-     if ioresult=0 then logmsg('>','Killing bad segment file')
-    end
- else logmsg('!','Unknown error with moving the segment file!')
+    else
+     begin
+      if DeleteFile(tplar[33]) then logmsg('>','Killing bad segment file')
+     end
+    else logmsg('!','Unknown error with moving the segment file!')
 end;
 
 Function donumber: boolean;
@@ -4111,9 +3848,7 @@ donumber:= checknl(lk);
 end;
 
 Function dosegment(stro: string): boolean;
-var io: word; st1: string;
-   year, month, day, dow:
-     {$IFDEF VIRTUALPASCAL} {$IFDEF FPC} Word {$ELSE} Longint {$ENDIF} {$ELSE} Word {$ENDIF};
+var io: word; st1: string; s: ansistring;
 begin
  assign(tmpfile,stro);
  reset(tmpfile);
@@ -4139,59 +3874,22 @@ begin
  close(tmpfile);
  tplar[10]:='';
  tplar[55]:='';
- assign(segfl,stro);
- reset(segfl);
-   GetFTime(segfl,ftime); { Get creation time }
-   UnpackTime(ftime,dt);
-   with dt do
-     begin
-      tplar[10]:=tplar[10]+leadingzero(day);
-      tplar[10]:=tplar[10]+'-';
-      tplar[10]:=tplar[10]+monthname[month];
-      tplar[10]:=tplar[10]+'-';
-      tplar[10]:=tplar[10]+copy(xstr(year),length(xstr(year))-1,2);
-      tplar[10]:=tplar[10]+' ';
-      tplar[10]:=tplar[10]+leadingzero(hour);
-      tplar[10]:=tplar[10]+':';
-      tplar[10]:=tplar[10]+leadingzero(min);
-      tplar[10]:=tplar[10]+':';
-      tplar[10]:=tplar[10]+leadingzero(sec)
-     end;
-{  reset(segfl);}
+ tftime:=FileAge(stro); { Get creation time }
+ TDT:=FileDateTodateTime(tftime);
+ DateTimeToString (S,'dd-mmm-yy hh:nn:ss',TDT);
+ tplar[10]:=S;
   val(stro,numb,i);
   if i<>0 then numb:= defcommentcount;
-close(segfl);
 
  logmsg('+','Segment file : '+tplar[33]);
 
- if (strupcase(copy(getctlvalue('TOUCHSEGMENTS'),1,1))='Y') then
+ if (UpCase(copy(getctlvalue('TOUCHSEGMENTS'),1,1))='Y') then
     begin
-      GetDate(year,month,day,dow);
-      tplar[55]:=tplar[55]+leadingzero(day);
-      tplar[55]:=tplar[55]+'-';
-      tplar[55]:=tplar[55]+monthname[month];
-      tplar[55]:=tplar[55]+'-';
-      tplar[55]:=tplar[55]+copy(xstr(year),length(xstr(year))-1,2);
-      tplar[55]:=tplar[55]+' ';
-
-      dt.year:=year;
-      dt.month:=month;
-      dt.day:=day;
-
-      GetTime(year,month,day,dow);
-      tplar[55]:=tplar[55]+leadingzero(year);
-      tplar[55]:=tplar[55]+':';
-      tplar[55]:=tplar[55]+leadingzero(month);
-      tplar[55]:=tplar[55]+':';
-      tplar[55]:=tplar[55]+leadingzero(day);
-
-      dt.hour:=year;
-      dt.min:=month;
-      dt.sec:=day;
-
-      packtime(dt,ftime);
-
-     end;
+      TDT:=now;
+      tftime:=DateTimeToFileDate(TDT);
+      DateTimeToString (S,'dd-mmm-yy hh:nn:ss',TDT);
+      tplar[55]:=S;
+    end;
 
      st1:= getctlvalue('EXECBEFORE');
      if st1 <> '' then begin
@@ -4211,7 +3909,6 @@ end;
 
 Procedure segment(stro: string);
 begin
-
  if not dosegment(stro) then exit;
 
  tplar[18]:=getctlvalue('ADDRESS');
@@ -4236,8 +3933,7 @@ begin
 {$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} ;
       writeln(testname(str1));
 *)
-
-if (strupcase(copy(getctlvalue('TOUCHSEGMENTS'),1,1))='Y') then
+if (UpCase(copy(getctlvalue('TOUCHSEGMENTS'),1,1))='Y') then
  logmsg('+','New segment date is '+tplar[55]+', age is not checked')
 else
  checkage;
@@ -4248,7 +3944,7 @@ else
 
  error('a',true,0);
 
- if (strupcase(copy(getctlvaluelite('ONLYONEREPORT'),1,1))<>'Y') or
+ if (UpCase(copy(getctlvaluelite('ONLYONEREPORT'),1,1))<>'Y') or
     ((tplar[2]='    0 (none)') and (tplar[3]='    0 (none)')) then if getctlvaluelite('NETMAIL')<>'' then report(addr);
 
 end;
@@ -4260,79 +3956,24 @@ if ioresult<>0 then writeln('Strange error!');
 end;
 
 Procedure compilepointlist;
-
-const daysinmonths: array [1..12] of byte = (31,28,31,30,31,30,31,31,30,31,30,31);
-      daysofweek: array [0..6] of string[9] = ('Sunday', 'Monday', 'Tuesday',
-                         'Wednesday', 'Thursday', 'Friday', 'Saturday');
-      months: array [1..12] of string[9] = ('January', 'February', 'March',
-              'April', 'May', 'June', 'July', 'August', 'September', 'October',
-              'November', 'December');
-
-
-      friday: boolean = false;
-
+const	friday: boolean = false;
 (* ------------------------------------------- *)
-
-Procedure strdig(var value: string; number: word; digits: byte);
-var i: byte;
-begin
-  value:=xstr(number);
-  for i:=digits-1 downto length(xstr(number)) do value:= '0'+value
-end;
-
 Procedure dayofyear;
-Const
- visok: byte = 0;
 Var
- Year, Month, Day, DayOfWeek: {$IFDEF VIRTUALPASCAL} {$IFDEF FPC} Word {$ELSE} Longint {$ENDIF} {$ELSE} Word {$ENDIF};
- i: byte;
-
- doy: Word;
+ DD,MM,YYYY : Word;
+ ReleaseDate : TDateTime;
 begin
-  doy:= 0;
-  getdate(Year, Month, Day, DayOfWeek);
-  if year mod 4 = 0 then visok:=1;
-  for i:=1 to month-1 do
-    begin
-     doy:= doy+daysinmonths[i];
-     if (i=2) then doy:= doy+visok
-    end;
-  doy:=doy+day;
+   if friday then begin
+    if DayOfWeek(Now)<=6 then ReleaseDate:=Now+6-DayOfWeek(Now);
+    if DayOfWeek(Now)=7 then ReleaseDate:=Now+6;
+   end else ReleaseDate:=Now;
 
-  if friday then
-begin
-    if dayofweek=6 then
-      begin
-        doy:=doy+6;
-        day:=day+6 
-      end
-    else
-      begin
-        doy:=doy+(5-dayofweek);
-        day:=day+(5-dayofweek)
-      end;
-
-  if month<>2 then visok:=0;
-
-       if daysinmonths[month]+visok<day then
-          begin
-            day:=day-(daysinmonths[month]+visok);
-            inc(month);
-            if month>12 then begin
-             month:=1;
-             inc(year)
-            end
-          end;
-
-         dayofweek:=5
-
-     end; {friday}
-
-  strdig(tplar[48],day,2);
-  tplar[49]:= months[month];
-  tplar[50]:= xstr(year);
-  tplar[51]:= daysofweek[dayofweek];
-  strdig(tplar[52],doy,3);
+  DecodeDate(ReleaseDate,YYYY,MM,DD);
+  tplar[48]:= FormatDateTime('DD',ReleaseDate);
+  tplar[49]:= FormatDateTime('MMMM',ReleaseDate);
+  tplar[50]:= FormatDateTime('YYYY',ReleaseDate);
+  tplar[51]:= FormatDateTime('DDDD',ReleaseDate);
+  tplar[52]:= Format('%.3d',[Trunc(ReleaseDate-EncodeDate(YYYY,1,1)+1)]);
 
   logmsg('+','Pointlist for '+tplar[51]+', '+tplar[49]+' '+tplar[48]+', '+tplar[50]+
           ' -- Day number '+tplar[52])
@@ -4353,9 +3994,10 @@ Var
     pntfileb: file of char;
     f:text;
     ff: file;
-    backslash,crcpos: byte;
+    crcpos: byte;
 
 begin
+
 
  if lite then haltonerror('Compilation of pointlist is not possible in the LITE mode!',notcompatiblewithlitemode);
 
@@ -4366,7 +4008,7 @@ begin
  tplar[54]:=getctlvaluelite('POINTLIST');
  if tplar[54]='' then haltonerror('Variable POINTLIST not defined!',212);
 
- if strupcase(copy(getctlvaluelite('PNTLDATE'),1,1))='F' then friday:= true;
+ if UpCase(copy(getctlvaluelite('PNTLDATE'),1,1))='F' then friday:= true;
 
  dayofyear;
 
@@ -4392,45 +4034,30 @@ maxnode:=xval(getctlvaluelite('MAXNUMBER'));
 if maxnode>32767 then maxnode:=32767;
 
       nametest:= GetCTLValueLite ('MASTER');
-      if nametest='' then getdir(0,nametest);
-
+      if nametest='' then nametest:=GetCurrentDir;
 logmsg('@','Scanning MASTER directory : '+nametest);
-     if ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('CREATIONCHECK')[1])
-        {$ELSE}strupcase(copy(getctlvalue('CREATIONCHECK'),1,1)){$ENDIF}='M') then str3:='MEDIUM' else
-     if ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('CREATIONCHECK')[1])
-        {$ELSE}strupcase(copy(getctlvalue('CREATIONCHECK'),1,1)){$ENDIF}='F') or
+     if (upcase(getctlvalue('CREATIONCHECK')[1])='M') then str3:='MEDIUM' else
+     if (upcase(getctlvalue('CREATIONCHECK')[1])='F') or
 	(getctlvalue('CREATIONCHECK')='') then str3:='MEDIUM' else
           str3:='QUICK';
 
         logmsg('+','Type of checking : '+str3);
-
-      if nametest[length(nametest)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then nametest:=nametest+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
-;
+      nametest:=IncludeTrailingPathDelimiter(nametest);
 
   new(bool);
 
   fillchar(bool^,sizeof(booltype),0);
 
-  FindFirst(nametest+{$IFDEF VIRTUALPASCAL}'*' {$ELSE} '*.*' {$ENDIF}, $3F, DirInfo);
-
-  while DosError = 0 do
-  begin
-
-    tplar[8]:=DirInfo.Name;
-    becomeaddress(number,false);
-    if number>0 then
-
-        bool^ [number div 8] := bool^ [number div 8] or (1 shl (number mod 8));
-
-    FindNext(DirInfo);
-    
-  end;
-
-  {$IFDEF VIRTUALPASCAL} findclose(dirinfo); {$ENDIF}
+  if Sysutils.FindFirst(nametest+'*.*',faAnyFile,TDirInfo)=0 then
+    begin
+     repeat
+     tplar[8]:=TDirInfo.Name;
+     becomeaddress(number,false);
+     if number>0 then
+         bool^ [number div 8] := bool^ [number div 8] or (1 shl (number mod 8));
+     Until Sysutils.FindNext(Tdirinfo)<>0;
+    Sysutils.FindClose(TDirInfo);
+    end;
 
   for node := 1 to maxnode do if 
     (bool^ [node div 8] and (1 shl (node mod 8)))<>0 then
@@ -4438,13 +4065,8 @@ logmsg('@','Scanning MASTER directory : '+nametest);
   lk:=node;
   
       nametest:= GetCTLValueLite ('MASTER');
-      if nametest='' then getdir(0,nametest);
-      if nametest[length(nametest)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then nametest:=nametest+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
-;
+      if nametest='' then nametest:=GetCurrentDir;
+      nametest:=IncludeTrailingPathDelimiter(nametest);
       nametest:= testname(nametest);
 
   if nametest<>'' then
@@ -4474,33 +4096,27 @@ logmsg('@','Scanning MASTER directory : '+nametest);
 
 { !!! }
 
-     if ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('CREATIONCHECK')[1])
-        {$ELSE}strupcase(copy(getctlvalue('CREATIONCHECK'),1,1)){$ENDIF}='M') or
-        ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('CREATIONCHECK')[1])
-        {$ELSE}strupcase(copy(getctlvalue('CREATIONCHECK'),1,1)){$ENDIF}='F') or
+     if (upcase(getctlvalue('CREATIONCHECK')[1])='M') or
+        (upcase(getctlvalue('CREATIONCHECK')[1])='F') or
 	(getctlvalue('CREATIONCHECK')='') then
 
      checkage;
      
-    if  ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('CREATIONCHECK')[1])
-        {$ELSE}strupcase(copy(getctlvalue('CREATIONCHECK'),1,1)){$ENDIF}='F') or
+    if  (upcase(getctlvalue('CREATIONCHECK')[1])='F') or
 	(getctlvalue('CREATIONCHECK')='') then
      
      readsegment else
 
 begin
 
- if ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='Y') or
-    ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='S') or
-    ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='E') or
-    ({$IFDEF VIRTUALPASCAL}upcase(getctlvalue('READUNIXLINES')[1])
-        {$ELSE}strupcase(copy(getctlvalue('READUNIXLINES'),1,1)){$ENDIF}='W')
+ if (upcase(getctlvalue('READUNIXLINES')[1])='Y') or
+    (upcase(getctlvalue('READUNIXLINES')[1])='S') or
+    (upcase(getctlvalue('READUNIXLINES')[1])='E') or
+    (upcase(getctlvalue('READUNIXLINES')[1])='W')
  then unixlines:=true
  else unixlines:=false;
- {$IFDEF LINUX} if strupcase(str4)='-L' then unixlines:=false; {$ENDIF}
+// WTF ??
+ {$IFDEF UNIX} if UpCase(str4)='-L' then unixlines:=false; {$ENDIF}
 
   assign(f, tplar[33]);
   if unixlines
@@ -4545,16 +4161,8 @@ end;
   tplar[53]:= getctlvaluelite('FAKECRCSTR');
   if tplar[53]='' then tplar[53]:='00000';
 
-        backslash:=0;
-
-        for i:=1 to length(tplar[54]) do if tplar[54,i]={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then backslash:=i;
-
-        if pos('.',copy(tplar[54],backslash+1,length(tplar[54])-backslash))=0 then
+        if ExtractFileExt(tplar[54])='' then
            tplar[54]:=tplar[54]+'.'+tplar[52];
-
-
 
         assign(pntfile,tplar[54]);
 
@@ -4580,7 +4188,7 @@ end;
 
                 readln(segfl,str3);
                 str3:=tplstring(str3);
-                if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF LINUX}+#13{$ENDIF});
+                if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF UNIX}+#13{$ENDIF});
 
               until (eof(segfl)) or endflag;
 
@@ -4605,7 +4213,7 @@ end;
      repeat
        readln(segfl,str3);
        str3:=tplstring(str3);
-       if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF LINUX}+#13{$ENDIF});
+       if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF UNIX}+#13{$ENDIF});
      until (eof(segfl)) or endflag;
 
       close(segfl);
@@ -4617,7 +4225,7 @@ end;
      reset(segfl);
      repeat
        readln(segfl,str3);
-       writeln(pntfile,str3{$IFDEF LINUX}+#13{$ENDIF});
+       writeln(pntfile,str3{$IFDEF UNIX}+#13{$ENDIF});
      until eof(segfl);
      close(segfl);
 
@@ -4635,7 +4243,7 @@ end;
      repeat
        readln(segfl,str3);
        str3:=tplstring(str3);
-       if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF LINUX}+#13{$ENDIF});
+       if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF UNIX}+#13{$ENDIF});
      until (eof(segfl)) or endflag;
 
      close(segfl);
@@ -4647,7 +4255,7 @@ end;
 
      runerror('compile',2);
 
-     changetime;
+     FileSetDate(tplar[33],tftime);
 
      moveseg;
 
@@ -4681,7 +4289,7 @@ end;
      repeat
        readln(segfl,str3);
        str3:=tplstring(str3);
-       if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF LINUX}+#13{$ENDIF});
+       if not (endflag and (str3='')) then writeln(pntfile,';'+str3{$IFDEF UNIX}+#13{$ENDIF});
      until (eof(segfl)) or endflag;
 
      close(segfl);
@@ -4698,7 +4306,7 @@ end;
   close(pntfile);
   crcpos:=pos(tplar[53],str3);
 
-  strdig(tplar[53],ndlcrc(tplar[54]),5); {crc}
+  tplar[53]:=Format('%.5d',[ndlcrc(tplar[54])]); { calculate crc }
 
   if crcpos<>0 then
     begin
@@ -4732,41 +4340,15 @@ end;
 end;
 
 Begin
-{$IFDEF BSD}clrscr;{$ENDIF}
+
+ DefaultFormatSettings.LongMonthNames := LongMonthNames;
+ DefaultFormatSettings.ShortMonthNames := ShortMonthNames;
+ DefaultFormatSettings.LongDayNames := LongDayNames;
+ DefaultFormatSettings.ShortDayNames := ShortDayNames;
+
  result:=0;
  str2:='554E524547';
- serial:='';
- for lk:=1 to 10 do
-begin
-
- ch1:=str2[lk];
- case ch1 of
-   'A': i:=10;
-   'B': i:=11;
-   'C': i:=12;
-   'D': i:=13;
-   'E': i:=14;
-   'F': i:=15;
-  else i:= xval(ch1);
- end; {case}
-
- inc(lk);
-
- ch1:=str2[lk];
- case ch1 of
-   'A': j:=10;
-   'B': j:=11;
-   'C': j:=12;
-   'D': j:=13;
-   'E': j:=14;
-   'F': j:=15;
-  else j:= xval(ch1);
- end; {case}
-
- serial:=serial+chr(i*16+j);
-end;
-
-{writeln(serial); halt;}
+ serial:='000000';
 
   owner:= 'Unregistered!';
 
@@ -4786,63 +4368,22 @@ end;
 
   endflag:=false;
   wasattr:=false;
-(*  namefprog:= {$IFDEF VIRTUALPASCAL } 'PNTCHK-2' {$ELSE} nameprog {$ENDIF};*)
-
   TextColor (White);
   Write (nameprog+', ver.' + Version);
-  ColorMsg (LightCyan, {$IFDEF VIRTUALPASCAL } {$ELSE} '  '+ {$ENDIF}
-                       {$IFNDEF WIN32} {$IFDEF LINUX} {$ELSE} 
-                       {$IFDEF DOS32} ' '+ {$ELSE} '  '+ {$ENDIF}
-                       {$ENDIF} {$ENDIF} {$IFDEF EMX} ''+ {$ELSE} ' '+ {$ENDIF}
-                       ' Professional pointsegment checker');
+  ColorMsg (LightCyan,'  Professional pointsegment checker');
   ColorMsg (Yellow, 'Copyright (c) 1997,2004 Pavel I.Osipov (2:5020/770@fidonet)');
-{  colormsg (lightgray,'       * * *  Dedicated to Nataliy Mitina  * * *        ');}
   WriteLn;
-(*  {$IFDEF COMMERCIAL}
-  TextColor (LightGray);
-  Write ('Product owner: ');
-  ColorMsg (Yellow, Owner);
-  TextColor (LightGray);
-  Write ('Serial number: ');
-  ColorMsg (LightCyan, Serial);
-  TextColor (LightGray);
-  WriteLn;
-  {$ELSE}
-  ColorMsg (LightRed+128,'This copy is an unregistered evaluation!');
-  textcolor(lightgray);
-  writeln;
-  {$ENDIF}*)
   ctlfl:= paramstr(1);
   if (copy(ctlfl,1,2)<>'-c') and (copy(ctlfl,1,2)<>'-C') then ctlfl:= {namefprog+}'pntchk.ctl'
    else
     delete(ctlfl,1,2);
-  If (not Exist (ctlfl)) or (ctlfl='') Then
+  If (not FileExists(ctlfl)) or (ctlfl='') Then
   Begin
     ColorMsg (LightRed, 'Unable to open configuration file: '+ctlfl);
     Halt(ctlnotopen);
   End;
 
   ReadCTLFile (ctlfl);
-  registration;
-
-  IF serial<>tplar[5] then begin
-{  tplar[4]:=tplar[4]+'+';}
-  TextColor (LightGray);
-  Write ('Product owner: ');
-  ColorMsg (Yellow, Owner);
-  TextColor (LightGray);
-  Write ('Serial number: ');
-  ColorMsg (LightCyan, Serial);
-  TextColor (LightGray);
-  WriteLn;
-   end
-  else
-   begin
-  ColorMsg (LightRed+128,'This copy is an unregistered evaluation!');
-  textcolor(lightgray);
-  writeln;
-   end;
-
   tplar[5]:=serial; {serial}
   tplar[6]:=owner; {owner}
 
@@ -4850,22 +4391,22 @@ end;
  repeat
   inc(i);
   str4:=paramstr(i)
- until (copy(str4,1,1)<>'-') or (STRUPCASE(str4)='-L');
+ until (copy(str4,1,1)<>'-') or (UpCase(str4)='-L');
 
  for i:=1 to paramcount do if (copy(paramstr(i),1,1)='-')
-  and (strupcase(copy(paramstr(i),1,2))<>'-L')
-  and (strupcase(copy(paramstr(i),1,2))<>'-C') 
-  and (strupcase(copy(paramstr(i),1,2))<>'-S') then str4:='';
+  and (UpCase(copy(paramstr(i),1,2))<>'-L')
+  and (UpCase(copy(paramstr(i),1,2))<>'-C') 
+  and (UpCase(copy(paramstr(i),1,2))<>'-S') then str4:='';
 
   if (paramcount=0) or (str4='') then
     begin
       textcolor(15);
-      write('Usage: '+'PNTCHK' {$IFDEF WIN32} +namefprog {$ENDIF} 
-                               {$IFDEF DOS32} +namefprog {$ENDIF} 
-			       {$IFDEF LINUX} +namefprog {$ENDIF} 
-			       {$IFDEF EMX}   +namefprog {$ENDIF} 
+      write('Usage: '+'PNTCHK' {$IFDEF WINDOWS} +namefprog {$ENDIF}
+                               {$IFDEF DPMI} +namefprog {$ENDIF} 
+			       {$IFDEF UNIX} +namefprog {$ENDIF} 
+			       {$IFDEF OS2}   +namefprog {$ENDIF}
 			       
-                 {$IFNDEF LINUX} 
+                 {$IFNDEF UNIX} 
 +'.EXE' {$ENDIF} +' [-c<config>] <option> [<segment_file>]');
       writeln;
       writeln;
@@ -4889,9 +4430,9 @@ end;
    FindNextParameter;
   Until ((FormCount=10) or not(MoreParameters));
 
-{  if (strupcase(copy(getctlvalue('DEBUG'),1,1))='Y') then debug:=true else debug:=false;}
+{  if (UpCase(copy(getctlvalue('DEBUG'),1,1))='Y') then debug:=true else debug:=false;}
   if getctlvalue('COMMENTCOUNT')<>'' then tplar[12]:=getctlvalue('COMMENTCOUNT') else tplar[12]:='5';
-  if strupcase(copy(getctlvalue('SHARINGMODE'),1,1))='Y' then sharingmode:=true;
+  if UpCase(copy(getctlvalue('SHARINGMODE'),1,1))='Y' then sharingmode:=true;
   str3:= GetCTLValue ('LOGFILE');
   if str3='' then str3:='PNTCHK.LOG';
   OpenLogFile (str3, GetCTLValue ('LOGLEVEL'), nameprog+' v'+version);
@@ -4905,8 +4446,7 @@ end;
 
 { ---------- lite ---------------------- }
 
- If {$IFDEF VIRTUALPASCAL}upcase(getctlvalue('LITE')[1])
-        {$ELSE}strupcase(copy(getctlvalue('LITE'),1,1)){$ENDIF}='Y'
+ If upcase(getctlvalue('LITE')[1])='Y'
  then
   begin
      lite:=true;
@@ -4918,87 +4458,61 @@ end;
 { ---------- checkdirs ----------------- }
 
   { Get directory name from ctl file }
-  getdir(0,str2);
+  str2:=GetCurrentDir;
   str3:= GetCTLValuelite ('NETMAIL');
   if str3<>'' then begin
-   if copy(str3,length(str3),1)={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then delete(str3,length(str3),1);
-   chdir(str3);
+   chdir(ExtractFileDir(str3));
    if IOResult <> 0 then begin 
      chdir(str2);
      haltonerror(
-     'Cannot find netmail directory : '+str3+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,netmailnotfound); end;
-  end;
+     'Cannot find netmail directory : '+str3,netmailnotfound); end;
+  end else begin if str3='' then str3:=str2; end;
+
   chdir(str2);
 
   str3:= getctlvalue('TEMPDIR');
   if str3<>'' then begin
-   if copy(str3,length(str3),1)={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} then delete(str3,length(str3),1);
-   if str3='' then str3:=str2;
-   chdir(str3);
+   chdir(ExtractFileDir(str3));
    if IOResult <> 0 then begin
     chdir(str2);
      haltonerror(
-     'Cannot find temporary directory : '+str3+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,tempdirnotfound);
-  end; end;
+     'Cannot find temporary directory : '+str3,tempdirnotfound); end; 
+  end else begin if str3='' then str3:=str2; end;
 
   chdir(str2);
 
   str3:= GetCTLValueLite ('BACKUPDIR');
   if str3<>'' then begin
-   if copy(str3,length(str3),1)={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then delete(str3,length(str3),1);
-   chdir(str3);
+   chdir(ExtractFileDir(str3));
    if IOResult <> 0 then begin
      chdir(str2);
      haltonerror(
-    'Cannot find backup directory : '+str3+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,backupnotfound)
-  end; end;
+    'Cannot find backup directory : '+str3,backupnotfound); end;
+  end;
 
   chdir(str2);
 
   str3:= GetCTLValueLite ('MASTER');
   if str3<>'' then begin
-   if str3[length(str3)]={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then delete(str3,length(str3),1);
-   chdir(str3);
+   chdir(ExtractFileDir(str3));
    if IOResult <> 0 then begin
     chdir(str2);
     haltonerror(
-    'Cannot find master directory : '+str3+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,masternotfound)
-  end; end;
+    'Cannot find master directory : '+str3,masternotfound); end;
+  end;
 
   chdir(str2);
 
- if (strupcase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and 
-    (strupcase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') then begin
+ if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and 
+    (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') then begin
   str3:= GetCTLValueLite ('BADFILES');
   if str3<>'' then begin
-   if str3[length(str3)]={$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF}  then delete(str3,length(str3),1);
-   chdir(str3);
+   chdir(ExtractFileDir(str3));
    if IOResult <> 0 then begin
      chdir(str2);
      haltonerror(
-    'Cannot find badfiles directory : '+str3+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} ,badfilesnotfound)
-    end
-  end
+    'Cannot find badfiles directory : '+str3,badfilesnotfound); end;
+  end;
  end;
 
   chdir(str2);
@@ -5007,33 +4521,28 @@ end;
 
   end; {checkdirs}
 
-if strupcase(str4)='-L' then compilepointlist else
+if UpCase(str4)='-L' then compilepointlist else
 
 { ---------- Oho! -----------------}
 
 begin
-
-  FindFirst(str4, $3F, DirInfo2);
-
-  if doserror<>0 then haltonerror ('No segment file(s) found : '+str4,segnotopen);
-  while DosError = 0 do
+  if Sysutils.FindFirst(str4,faAnyFile,TDirInfo2)=0 then
   begin
+  repeat
 
+      wasattr:=false;
+      tplar[2]:='0 (none)';
+      tplar[13]:='Feda';
+      tplar[11]:='ok';
+      tplar[3]:='0 (none)'; {warnings}
+      tplar[14]:='0'; {seglines}
+      tplar[32]:='0';
 
-    wasattr:=false;
-    tplar[2]:='0 (none)';
-    tplar[13]:='Feda';
-    tplar[11]:='ok';
-    tplar[3]:='0 (none)'; {warnings}
-    tplar[14]:='0'; {seglines}
-    tplar[32]:='0';
+      segment(retfname(str4,true)+TDirInfo2.Name);
 
-
-    segment(retfname(str4,true)+DirInfo2.Name);
-    FindNext(DirInfo2);
-  end;
-
-     {$IFDEF VIRTUALPASCAL} findclose(dirinfo2); {$ENDIF}
+     Until Sysutils.FindNext(Tdirinfo2)<>0;
+     Sysutils.FindClose(TdirInfo2);
+     end else haltonerror ('No segment file(s) found : '+str4,segnotopen);
 
 {findfirst/findnext
 segment(str1)
