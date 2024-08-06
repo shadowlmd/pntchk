@@ -1,5 +1,4 @@
-{$MODE TP}
-(* {$M 65520,0,655200} *)
+{$M 65520,0,655200}
 Unit CTLM_me;
 Interface
 type

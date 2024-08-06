@@ -1,49 +1,22 @@
-{$Mode TP}
-UNIT crcunit;
+UNIT crcunit; { for OS/2 }
 
 interface
 
-// Uses {$IFDEF BW} CrtFake {$ELSE} crt {$ENDIF} ;
+Uses {$IFDEF BW} CrtFake, {$ELSE} crt, {$ENDIF} dos;
 
-//Procedure CalcCRC( Var S : String );
+Procedure CalcCRC( Var S : String );
 function NdlCRC (files: string): word;
-Function UpdateCRC32(C: byte; Crc: longint): Longword;
-Function CRC32OfFile(Fn: string; gso: boolean): Longword;
+Function UpdateCRC32(C: byte; Crc: longint): Longint;
+Function CRC32OfFile(Fn: PathStr; gso: boolean): Longint;
+
+var CRC: word;
+    filet: text;
+    crcstr: string;
 
 implementation
 
-Const CRC16Tab : array [0..255] of Word =
-  ( $0000, $1021, $2042, $3063, $4084, $50A5, $60C6, $70E7, $8108,
-    $9129, $A14A, $B16B, $C18C, $D1AD, $E1CE, $F1EF, $1231, $0210,
-    $3273, $2252, $52B5, $4294, $72F7, $62D6, $9339, $8318, $B37B,
-    $A35A, $D3BD, $C39C, $F3FF, $E3DE, $2462, $3443, $0420, $1401,
-    $64E6, $74C7, $44A4, $5485, $A56A, $B54B, $8528, $9509, $E5EE,
-    $F5CF, $C5AC, $D58D, $3653, $2672, $1611, $0630, $76D7, $66F6,
-    $5695, $46B4, $B75B, $A77A, $9719, $8738, $F7DF, $E7FE, $D79D,
-    $C7BC, $48C4, $58E5, $6886, $78A7, $0840, $1861, $2802, $3823,
-    $C9CC, $D9ED, $E98E, $F9AF, $8948, $9969, $A90A, $B92B, $5AF5,
-    $4AD4, $7AB7, $6A96, $1A71, $0A50, $3A33, $2A12, $DBFD, $CBDC,
-    $FBBF, $EB9E, $9B79, $8B58, $BB3B, $AB1A, $6CA6, $7C87, $4CE4,
-    $5CC5, $2C22, $3C03, $0C60, $1C41, $EDAE, $FD8F, $CDEC, $DDCD,
-    $AD2A, $BD0B, $8D68, $9D49, $7E97, $6EB6, $5ED5, $4EF4, $3E13,
-    $2E32, $1E51, $0E70, $FF9F, $EFBE, $DFDD, $CFFC, $BF1B, $AF3A,
-    $9F59, $8F78, $9188, $81A9, $B1CA, $A1EB, $D10C, $C12D, $F14E,
-    $E16F, $1080, $00A1, $30C2, $20E3, $5004, $4025, $7046, $6067,
-    $83B9, $9398, $A3FB, $B3DA, $C33D, $D31C, $E37F, $F35E, $02B1,
-    $1290, $22F3, $32D2, $4235, $5214, $6277, $7256, $B5EA, $A5CB,
-    $95A8, $8589, $F56E, $E54F, $D52C, $C50D, $34E2, $24C3, $14A0,
-    $0481, $7466, $6447, $5424, $4405, $A7DB, $B7FA, $8799, $97B8,
-    $E75F, $F77E, $C71D, $D73C, $26D3, $36F2, $0691, $16B0, $6657,
-    $7676, $4615, $5634, $D94C, $C96D, $F90E, $E92F, $99C8, $89E9,
-    $B98A, $A9AB, $5844, $4865, $7806, $6827, $18C0, $08E1, $3882,
-    $28A3, $CB7D, $DB5C, $EB3F, $FB1E, $8BF9, $9BD8, $ABBB, $BB9A,
-    $4A75, $5A54, $6A37, $7A16, $0AF1, $1AD0, $2AB3, $3A92, $FD2E,
-    $ED0F, $DD6C, $CD4D, $BDAA, $AD8B, $9DE8, $8DC9, $7C26, $6C07,
-    $5C64, $4C45, $3CA2, $2C83, $1CE0, $0CC1, $EF1F, $FF3E, $CF5D,
-    $DF7C, $AF9B, $BFBA, $8FD9, $9FF8, $6E17, $7E36, $4E55, $5E74,
-    $2E93, $3EB2, $0ED1, $1EF0 );
-
-  Crc32table: Array[byte] of longword =
+Const
+  Crc32table: Array[byte] of longint =
    ($00000000,$77073096,$EE0E612C,$990951BA,$076DC419,$706AF48F,$E963A535,
     $9E6495A3,$0EDB8832,$79DCB8A4,$E0D5E91E,$97D2D988,$09B64C2B,$7EB17CBD,
     $E7B82D07,$90BF1D91,$1DB71064,$6AB020F2,$F3B97148,$84BE41DE,$1ADAD47D,
@@ -82,62 +55,113 @@ Const CRC16Tab : array [0..255] of Word =
     $CDD70693,$54DE5729,$23D967BF,$B3667A2E,$C4614AB8,$5D681B02,$2A6F2B94,
     $B40BBE37,$C30C8EA1,$5A05DF1B,$2D02EF8D);
 
-function CRC16DoByte (newByte: byte; crc : Word): word;
-Var var1, var2 : Word;
+Procedure CalcCRC (var S: String);
 Begin
- var1 := newByte xor  (crc shr 8) and $FF;
- var2 := CRC16Tab[var1] xor (crc shl 8);
- CRC16DoByte :=  var2 and $FFFF;
+  Asm
+
+{$IFDEF VIRTUALPASCAL}
+
+    mov     bx,word ptr CRC
+
+    mov     esi,dword ptr s
+    xor     eax,eax
+    lodsb
+    add     esi,eax
+    mov     byte ptr ds:[esi],0Dh
+    inc     esi
+    mov     byte ptr ds:[esi],0Ah
+
+    mov     esi,dword ptr S
+    inc     esi
+    mov     ecx,eax
+    add     ecx,02h
+@@1:    lodsb
+
+    push    ecx
+    mov     dx,bx
+    xor     dh,al
+    xor     dl,dl
+    mov     ecx,0008h
+@@2:    shl dx,01h
+    jnc     @@3
+    xor     dx,01021h
+@@3:    loop    @@2
+    xor     dh,bl
+    pop ecx
+
+    mov     bx,dx
+    loop    @@1
+
+    mov     word ptr CRC,bx
+
+{$ELSE}
+
+    mov     bx,word ptr CRC
+
+    push    ds
+    lds     si,dword ptr s
+    lodsb
+    xor     ah,ah
+    add     si,ax
+    mov     byte ptr ds:[si],0Dh
+    inc     si
+    mov     byte ptr ds:[si],0Ah
+
+    mov     si,word ptr S
+    inc     si
+    mov     cx,ax
+    add     cx,02h
+@@1:    lodsb
+
+    push    cx
+    mov     dx,bx
+    xor     dh,al
+    xor     dl,dl
+    mov     cx,0008h
+@@2:    shl dx,01h
+    jnc     @@3
+    xor     dx,01021h
+@@3:    loop    @@2
+    xor     dh,bl
+    pop cx
+
+    mov     bx,dx
+    loop    @@1
+    pop     ds
+
+    mov     word ptr CRC,bx
+
+{$ENDIF}
+
+  End;
 End;
 
-Function CRC16String(str : String; crc: Word): Word;
-var i : Integer;
-Begin
-  for I := 1 to length(str) do
-    crc := CRC16DoByte( Ord(str[i]), crc);
-  CRC16String := CRC;
-end;
-
-function NdlCRC;
-var crc: word;
-f: text;
-newLine : String;
-lines : Integer;
-
+Function ndlcrc;
 begin
-    Assign (f, files);
-  Reset(f);
-  crc := 0;
-  lines := 0;
-
-    Readln(f, newLine);
-  repeat
-    Readln(f, newLine);
-    if newLine=#26 then break;
-//    writeln('new: '+ newLine);
-    crc := CRC16String(newLine+#13#10, crc);
-//    writeln(' --> '+IntToStr(crc));
-    inc(lines);
-  until Eof(f);
-  Close(f);
-//  Writeln('lines: '+IntToStr(lines));
-//  writeln('Calculated CRC : '+IntToStr(crc));
-NdlCRC:=crc;
+ assign (filet, files);
+ CRC:=0;
+ reset(filet);
+ readln(filet,crcstr);
+ repeat
+  readln(filet,crcstr);
+  if crcstr<>#26 then calccrc(crcstr);
+ until EOF(filet);
+ ndlcrc:= CRC;
+ close (filet)
 end;
 
-
-Function UpdateCRC32(c: byte; crc: longint): longword;
+Function UpdateCRC32(c: byte; crc: longint): longint;
 begin
   UpdateCRC32 := CRC32Table[(lo(crc) xor c) mod 256] xor (crc shr 8);
 end;
 
-Function CRC32OfFile(fn: string; gso: boolean): longword;
+Function CRC32OfFile(fn: pathstr; gso: boolean): longint;
 const
   MaxBuffLen = 65520;
 type bufftype = array[1..MaxBuffLen] of byte;
 var
-  crc: longword;
-  numread,loop,toread: LongInt;
+  crc: longint;
+  numread,loop,toread: {$IFDEF VIRTUALPASCAL } LongInt {$ELSE} Word {$ENDIF};
 {  buffer: array[1..1024] of byte;}
   pBuff: ^bufftype;
   f: file;
