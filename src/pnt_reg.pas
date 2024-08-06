@@ -1,5 +1,5 @@
 uses bvtools,tpstring;
-var 
+var
  f1: text;
  ch1,ch3,ch5: char;
  i,j,k,ch2,ch4,ch6: byte;

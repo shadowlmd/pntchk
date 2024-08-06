@@ -115,8 +115,8 @@ Var
   Copyright:String;
   MaximumMsgs: Word;
   MessageChanged: Boolean;
-  
-  
+
+
 Implementation
 
 Function UniqueID: String;
@@ -229,10 +229,10 @@ End;
 Procedure TNetMail. Rescan;
 Begin
   NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
-(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF} 
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF}
          Then
-    NetMailPath:=NetMailPath+{$IFDEF LINUX} 
-'/' {$ELSE} 
+    NetMailPath:=NetMailPath+{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF} ; *)
   FindFirst(NetMailPath+'*.msg', AnyFile-Directory, DirInfo);
   If DosError=0 then CurrentMsg := DirInfo.Name
@@ -242,12 +242,12 @@ End;
 Procedure TNetMail.OpenMsg;
 Begin
   NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
-(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF}  Then
-    NetMailPath:=NetMailPath+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
+    NetMailPath:=NetMailPath+{$IFDEF LINUX}
+'/' {$ELSE}
+'\' {$ENDIF}
 ; *)
   Assign (MFile, NetMailPath + CurrentMsg);
   FileMode := 2;
@@ -321,12 +321,12 @@ Begin
     CloseMsg;
   NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
 
-(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF}  Then
-    NetMailPath:=NetMailPath+{$IFDEF LINUX} 
-'/' {$ELSE} 
-'\' {$ENDIF} 
+    NetMailPath:=NetMailPath+{$IFDEF LINUX}
+'/' {$ELSE}
+'\' {$ENDIF}
 ; *)
   MessageOpen := False;
   FindNext(DirInfo);
@@ -358,8 +358,8 @@ Begin
   FillChar(Header,190,0);
   FindFirst (ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath)) +'*.msg', AnyFile, DirInfo);
 
-(*  FindFirst (NetMailPath +{$IFDEF LINUX} 
-'/' {$ELSE} 
+(*  FindFirst (NetMailPath +{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF} +'*.msg', AnyFile, DirInfo); *)
   MaxMsg := 0;
   While DosError = 0 do
@@ -373,11 +373,11 @@ Begin
   Inc (MaxMsg);
   NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
 
-(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} 
-'/' {$ELSE} 
+(*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF}  Then
-    NetMailPath:=NetMailPath+{$IFDEF LINUX} 
-'/' {$ELSE} 
+    NetMailPath:=NetMailPath+{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF} ; *)
   Assign (MFile, NetMailPath + XStr (MaxMsg) + '.msg');
   FileMode := 2;
@@ -401,8 +401,8 @@ Begin
    End;
   NetMailPath:=ExtractFilePath(IncludeTrailingPathDelimiter(NetMailPath));
 (*  If NetMailPath[Length(NetMailPath)]<>{$IFDEF LINUX} '/' {$ELSE} '\' {$ENDIF}
-         Then NetMailPath:=NetMailPath+{$IFDEF LINUX} 
-'/' {$ELSE} 
+         Then NetMailPath:=NetMailPath+{$IFDEF LINUX}
+'/' {$ELSE}
 '\' {$ENDIF} ; *)
   Assign (MFile, NetMailPath + CurrentMsg);
   Erase(MFile);

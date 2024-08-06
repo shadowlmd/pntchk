@@ -145,7 +145,7 @@ NameProg = 'PNTCHK'
 
     LongMonthNames: TMonthNameArray = ('January','February','March','April','May','June',
                      'July','August','September','October','November','December');
-    ShortMonthNames: TMonthNameArray = ('Jan','Feb','Mar','Apr','May','Jun', 
+    ShortMonthNames: TMonthNameArray = ('Jan','Feb','Mar','Apr','May','Jun',
                       'Jul','Aug','Sep','Oct','Nov','Dec');
     LongDayNames: TWeekNameArray = ('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday');
     ShortDayNames: TWeekNameArray = ('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
@@ -189,20 +189,20 @@ Begin
 End;
 
 {
-     ASSIGN         
+     ASSIGN
 
-                    
-                
+
+
      BAUDERRTPL     IMPLERRTPL                 SYSOPERRTPL
      CMNTERRTPL     INADMCHARERRTPL  PHONEERRTPL     SYSTEMERRTPL
-                           
-		     LOCATERRTPL      PNTLSTERRTPL    
-     DUPFLGERRTPL                  
-     EMPTYLINETPL               
 
-     EQNUMERRTPL    NDLERRTPL            
+		     LOCATERRTPL      PNTLSTERRTPL
+     DUPFLGERRTPL
+     EMPTYLINETPL
 
-  NDLINDEX             
+     EQNUMERRTPL    NDLERRTPL
+
+  NDLINDEX
 }
 
 
@@ -437,7 +437,7 @@ begin
 {   colormsg (lightred, screenmsg);}
    logmsg('!',logmessage);
    closelogfile ('Program halted ('+xstr(errorcode)+')');
- 
+
    str1:= getctlvalue('TEMPDIR');
 
    DoneCTLManager;
@@ -473,7 +473,7 @@ begin
  if ioresult<>0 then
    begin
      str8:=getctlvaluelite('TEMPLATEPATH');
-     if str8='' then str8:=IncludeTrailingPathDelimiter(GetCurrentDir)+tplnm else 
+     if str8='' then str8:=IncludeTrailingPathDelimiter(GetCurrentDir)+tplnm else
         str8:=ExtractFilePath(IncludeTrailingPathDelimiter(str8))+tplnm;
      assign(tpfl^ [1],str8);
      reset(tpfl^ [1]);
@@ -484,7 +484,7 @@ begin
 
  str8:=getctlvalue('TEMPDIR');
  tplnm:=ExtractFileName(tplnm);
- if str8='' then str8:=IncludeTrailingPathDelimiter(GetCurrentDir)+tplnm else 
+ if str8='' then str8:=IncludeTrailingPathDelimiter(GetCurrentDir)+tplnm else
     str8:=ExtractFilePath(IncludeTrailingPathDelimiter(str8))+tplnm;
  assign(tmpfl,str8);
  rewrite(tmpfl);
@@ -535,7 +535,7 @@ end;
      reset(tpfl^ [m]);
      if ioresult<>0 then begin
       str7:=getctlvaluelite('TEMPLATEPATH');
-     if str7='' then str7:=IncludeTrailingPathDelimiter(GetCurrentDir)+copy(tplar[k],2,length(tplar[k])-1) else 
+     if str7='' then str7:=IncludeTrailingPathDelimiter(GetCurrentDir)+copy(tplar[k],2,length(tplar[k])-1) else
         str7:=ExtractFilePath(IncludeTrailingPathDelimiter(str7))+copy(tplar[k],2,length(tplar[k])-1);
       assign(tpfl^ [m],str7);
       reset(tpfl^ [m]);
@@ -808,7 +808,7 @@ end;
   { Get directory name from ctl file }
   pth2:= GetCurrentDir;
   pth1:= GetCTLValueLite ('NETMAIL');
-  if pth1='' then pth1:=pth2 else 
+  if pth1='' then pth1:=pth2 else
         pth1:=ExtractFileDir(IncludeTrailingPathDelimiter(pth1));
   chdir(pth1);
   if IOResult <> 0 then haltonerror(
@@ -817,7 +817,7 @@ end;
    Net.NetmailPath:=pth1;
 
   st1:= getctlvalue('TEMPDIR');
-  if st1='' then st1:=GetCurrentDir else 
+  if st1='' then st1:=GetCurrentDir else
         st1:=ExtractFileDir(IncludeTrailingPathDelimiter(st1));
 {  st2:= getctlvalue('TEMPFILE');
   if st2='' then} st2:='MSG_TMP.FFF';
@@ -889,7 +889,7 @@ else
 
  begin
 
-  if pth1='' then pth1:=GetCurrentDir else 
+  if pth1='' then pth1:=GetCurrentDir else
         pth1:=ExtractFileDir(IncludeTrailingPathDelimiter(pth1));
   if pth1='' then pth1:=pth2;
   Net.NetmailPath:=pth1;
@@ -1379,7 +1379,7 @@ begin
   seek(indexfile2,9); bytevar:=1; write(indexfile2,bytevar);
   readnodelist:=false;
   close(indexfile2);
-  close(infile); 
+  close(infile);
   longvar:=namecrccode(str4,true);
   reset(indexfile);
   seek(indexfile,0);
@@ -1510,9 +1510,9 @@ end;
   reset(indexfile);
   seek(indexfile,1028);
 
-  for i:=1 to 10920 do if fileposar^ [i]<>0 then write(indexfile,fileposar^ [i]); 
-  for i:=1 to 10920 do if fileposar1^ [i]<>0 then write(indexfile,fileposar1^ [i]); 
-  for i:=1 to 10920 do if fileposar2^ [i]<>0 then write(indexfile,fileposar2^ [i]); 
+  for i:=1 to 10920 do if fileposar^ [i]<>0 then write(indexfile,fileposar^ [i]);
+  for i:=1 to 10920 do if fileposar1^ [i]<>0 then write(indexfile,fileposar1^ [i]);
+  for i:=1 to 10920 do if fileposar2^ [i]<>0 then write(indexfile,fileposar2^ [i]);
 
   close(indexfile);
 
@@ -1643,7 +1643,7 @@ if ioresult<>0 then writeln('Very strange error! Please contact the author!');
  for i:=1 to length(str2) do if str2[i]='_' then str2[i]:=' ';
  if pos(' ',str2)<>0 then
      splitstring(str2,tplar[40],tplar[41])
-  else begin 
+  else begin
     tplar[40]:=str2;
   end;
   close(infile2)
@@ -2240,8 +2240,8 @@ begin {readsegment}
 ;  Until (FormCount=20) or not(MoreParameters) or ok;}
 
   FindFirstParameter('PHONENUMBER');
-  if UpCase(copy(getctlvalue('CHANGEPHONE'),1,1))='Y' then 
-    begin 
+  if UpCase(copy(getctlvalue('CHANGEPHONE'),1,1))='Y' then
+    begin
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
      tplar[34]:=st1
@@ -2311,8 +2311,8 @@ begin {readsegment}
 
   ok:=false;
   FindFirstParameter('LOCATION');
-  if UpCase(copy(getctlvalue('CHANGELOCATION'),1,1))='Y' then 
-    begin 
+  if UpCase(copy(getctlvalue('CHANGELOCATION'),1,1))='Y' then
+    begin
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
      tplar[35]:=st1
@@ -2381,8 +2381,8 @@ begin {system}
 
   ok:=false;
 
-  if UpCase(copy(getctlvalue('CHANGESYSTEM'),1,1))='Y' then 
-    begin 
+  if UpCase(copy(getctlvalue('CHANGESYSTEM'),1,1))='Y' then
+    begin
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
      tplar[46]:=st1
@@ -2449,8 +2449,8 @@ begin {sysop}
 
   ok:=false;
 
-  if UpCase(copy(getctlvalue('CHANGESYSOP'),1,1))='Y' then 
-    begin 
+  if UpCase(copy(getctlvalue('CHANGESYSOP'),1,1))='Y' then
+    begin
      splitstring(currentctlvalue,st1,st2);
      if st1='' then st1:=st2;
      tplar[47]:=st1
@@ -3142,7 +3142,7 @@ procedure movet(param1,param2: string);
   FromF, ToF: file;
   NumRead, NumWritten: LongInt;
   Buf: array[1..2048] of Char;
-  str1: string; 
+  str1: string;
 begin
   Assign(FromF, param1); { Open input file } {@segname}
 
@@ -3162,19 +3162,19 @@ if UpCase(copy(param1,1,2))<>UpCase(copy(param2,1,2)) then
      begin
   Reset(FromF, 1);  { Record size = 1 }
   runerror('movet',1);
-  
+
   Assign(ToF, Param2); { Open output file }
   Rewrite(ToF, 1);  { Record size = 1 }
-  
- runerror('movet',2);  
- 
+
+ runerror('movet',2);
+
 {  Writeln('Copying ', FileSize(FromF), ' bytes...');}
   repeat
     BlockRead(FromF, Buf, SizeOf(Buf), NumRead);
     BlockWrite(ToF, Buf, NumRead, NumWritten);
   until (NumRead = 0) or (NumWritten <> NumRead);
-  
- runerror('movet',3);  
+
+ runerror('movet',3);
   Close(FromF);
  runerror('movet',4);
   Close(ToF);
@@ -3186,7 +3186,7 @@ DeleteFile(Param1);
 {$ENDIF}
  RenameFile(param1,param2);
  runerror('movet',6);
- 
+
 end;
 
 procedure copys(param1,param2: string);
@@ -3246,9 +3246,9 @@ begin { genuine readsegment }
    chdir(pth2);
    logmsg('@','Copying segment file to the backup directory : '+pth1);
 // WTF???
-(*   copys(tplar[33],pth1+{$IFDEF LINUX} 
-'/' + StrDownCase(tplar[8]) {$ELSE} 
-'\' + tplar[8] {$ENDIF}) 
+(*   copys(tplar[33],pth1+{$IFDEF LINUX}
+'/' + StrDownCase(tplar[8]) {$ELSE}
+'\' + tplar[8] {$ENDIF})
 *)
 copys(tplar[33],pth1+tplar[8]);
   end
@@ -3287,8 +3287,8 @@ copys(tplar[33],pth1+tplar[8]);
   tplar[32]:=xstr(xval(tplar[32])+1);
 { if tplar[15,1]<>';' then}
  for i:=1 to length(tplar[15]) do
-  if (not admchar(tplar[15,1],tplar[15,i])) 
-     or ((tplar[15,i-1]=';') and (tplar[15,i]='`') and 
+  if (not admchar(tplar[15,1],tplar[15,i]))
+     or ((tplar[15,i-1]=';') and (tplar[15,i]='`') and
         (upcase(getctlvalue('NODELIFECOMPAT')[1])='Y'))
 
 then
@@ -3393,7 +3393,7 @@ then
        close(f);
     end;
  st2:= getctlvalue('TEMPDIR');
- if st2='' then st2:=IncludeTrailingPathDelimiter(GetCurrentDir) else 
+ if st2='' then st2:=IncludeTrailingPathDelimiter(GetCurrentDir) else
     st2:=ExtractFilePath(IncludeTrailingPathDelimiter(st2));
  st3:='PNT_TMP.FFF';
  assign(f1, st2+st3);
@@ -3482,7 +3482,7 @@ movet(st2+st3, tplar[33]);
       reset(ff,1)
     else
       reset(f);
-      
+
  runerror('readsegment',5);
 
  rewrite(f1);
@@ -3491,7 +3491,7 @@ movet(st2+st3, tplar[33]);
  repeat
   if unixlines
     then
-      if readunixln(ff,s1) then 
+      if readunixln(ff,s1) then
        else
     else
       readln(f,s1);
@@ -3583,10 +3583,10 @@ begin
   if age<0 then
       begin
         time:=-1;
-	TDT:=ComposeDateTime(Now,EncodeTime(00,00,00,00)); 
+	TDT:=ComposeDateTime(Now,EncodeTime(00,00,00,00));
 	tftime:=DateTimeToFileDate(TDT);
         age:=0;
-      end; 
+      end;
   segage:=age
 end;
 
@@ -3750,8 +3750,8 @@ begin
 
  chdir(pth2);
 
- if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and 
-    (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') 
+ if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and
+    (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A')
    then begin
   pth1:= GetCTLValuelite ('BADFILES');
   if pth1='' then pth1:=pth2;
@@ -3925,7 +3925,7 @@ begin
      inc(result)
    end
   else begin
-     
+
   {haltonerror('Unknown format of segment name!',incorrectsegname);}
 
 (*      str1:=getctlvaluelite('MASTER');
@@ -4059,11 +4059,11 @@ logmsg('@','Scanning MASTER directory : '+nametest);
     Sysutils.FindClose(TDirInfo);
     end;
 
-  for node := 1 to maxnode do if 
+  for node := 1 to maxnode do if
     (bool^ [node div 8] and (1 shl (node mod 8)))<>0 then
  begin
   lk:=node;
-  
+
       nametest:= GetCTLValueLite ('MASTER');
       if nametest='' then nametest:=GetCurrentDir;
       nametest:=IncludeTrailingPathDelimiter(nametest);
@@ -4101,10 +4101,10 @@ logmsg('@','Scanning MASTER directory : '+nametest);
 	(getctlvalue('CREATIONCHECK')='') then
 
      checkage;
-     
+
     if  (upcase(getctlvalue('CREATIONCHECK')[1])='F') or
 	(getctlvalue('CREATIONCHECK')='') then
-     
+
      readsegment else
 
 begin
@@ -4324,7 +4324,7 @@ end;
       close(pntfileb)
     end;
 
-  logmsg('@','Closing processed pointlist file, CRC='+tplar[53]); 
+  logmsg('@','Closing processed pointlist file, CRC='+tplar[53]);
 
      str3:= getctlvalue('EXECPNTLST');
      if str3 <> '' then begin
@@ -4395,18 +4395,18 @@ Begin
 
  for i:=1 to paramcount do if (copy(paramstr(i),1,1)='-')
   and (UpCase(copy(paramstr(i),1,2))<>'-L')
-  and (UpCase(copy(paramstr(i),1,2))<>'-C') 
+  and (UpCase(copy(paramstr(i),1,2))<>'-C')
   and (UpCase(copy(paramstr(i),1,2))<>'-S') then str4:='';
 
   if (paramcount=0) or (str4='') then
     begin
       textcolor(15);
       write('Usage: '+'PNTCHK' {$IFDEF WINDOWS} +namefprog {$ENDIF}
-                               {$IFDEF DPMI} +namefprog {$ENDIF} 
-			       {$IFDEF UNIX} +namefprog {$ENDIF} 
+                               {$IFDEF DPMI} +namefprog {$ENDIF}
+			       {$IFDEF UNIX} +namefprog {$ENDIF}
 			       {$IFDEF OS2}   +namefprog {$ENDIF}
-			       
-                 {$IFNDEF UNIX} 
+			
+                 {$IFNDEF UNIX}
 +'.EXE' {$ENDIF} +' [-c<config>] <option> [<segment_file>]');
       writeln;
       writeln;
@@ -4462,7 +4462,7 @@ Begin
   str3:= GetCTLValuelite ('NETMAIL');
   if str3<>'' then begin
    chdir(ExtractFileDir(str3));
-   if IOResult <> 0 then begin 
+   if IOResult <> 0 then begin
      chdir(str2);
      haltonerror(
      'Cannot find netmail directory : '+str3,netmailnotfound); end;
@@ -4476,7 +4476,7 @@ Begin
    if IOResult <> 0 then begin
     chdir(str2);
      haltonerror(
-     'Cannot find temporary directory : '+str3,tempdirnotfound); end; 
+     'Cannot find temporary directory : '+str3,tempdirnotfound); end;
   end else begin if str3='' then str3:=str2; end;
 
   chdir(str2);
@@ -4503,7 +4503,7 @@ Begin
 
   chdir(str2);
 
- if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and 
+ if (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'Y') and
     (UpCase(copy(getctlvaluelite('KILLBAD'),1,1))<>'A') then begin
   str3:= GetCTLValueLite ('BADFILES');
   if str3<>'' then begin

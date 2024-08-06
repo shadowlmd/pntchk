@@ -1,3 +1,3 @@
-error @errornumber: 
+error @errornumber:
   неизвестный флаг "@currentflag"
 @end

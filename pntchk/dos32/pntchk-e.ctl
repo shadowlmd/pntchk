@@ -146,7 +146,7 @@ ONLYONEREPORT YES
 ;
 ;   Wildcard in the extension: * - any extension
 ;                              999 - only number digits
-;                    
+;
 ;   When more than one nodelist meets wildcard requirements, nodelist
 ;   with the last date of creation will be taken
 ;
@@ -216,7 +216,7 @@ PVTPOINTS YES
 ;    char), otherwise you will get an unpredictable result
 ;
 SEGMENTFORMAT SEG~D~D~D~D~D.PNT
-SEGMENTFORMAT MOPOINTS.~H~D~D ; ABSOLUTELY the same as ????????.~H~D~D 
+SEGMENTFORMAT MOPOINTS.~H~D~D ; ABSOLUTELY the same as ????????.~H~D~D
 ; SEGMENTFORMAT ~D~D~D~D~DPNT.TXT
 ;
 ;   Should PNTCHK rename the segment (if YES, rename to the first
@@ -362,7 +362,7 @@ flags		!!01 !!02 !!08 !!09 !!18 !!20
 ;
 ;   IP Flags
 ;
-flags		IBN IBN:[0-9] IBN:[1-9][0-9] IBN:[1-9][0-9][0-9] 
+flags		IBN IBN:[0-9] IBN:[1-9][0-9] IBN:[1-9][0-9][0-9]
 flags		IBN:[1-9][0-9][0-9][0-9] IBN:[1-9][0-9][0-9][0-9][0-9]
 flags		IFC IFC:[0-9] IFC:[1-9][0-9] IFC:[1-9][0-9][0-9]
 flags		IFC:[1-9][0-9][0-9][0-9] IFC:[1-9][0-9][0-9][0-9][0-9]
@@ -426,7 +426,7 @@ implies V90S           = V34
 implies X2C            = V34
 implies X2S            = V34
 implies CM             = UT[A-X][A-X] UT[A-X][a-x] UT[a-x][A-X] UT[a-x][a-x]
-implies ISDN           = V110L V110H V120L V120H X75 
+implies ISDN           = V110L V110H V120L V120H X75
 ;
 ;   Avoiding of time flags duplication
 ;
@@ -471,7 +471,7 @@ REMOVEEMPTYLINES YES
 ;        segment
 ;
 READUNIXLINES WARNING
-; 
+;
 ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ;
 ;   This variable determines the reaction of the PNTCHK to incorrect
@@ -482,7 +482,7 @@ READUNIXLINES WARNING
 ;   variable to "baudwrn.tpl" or anything else where the content of the
 ;   further warning message is stored);
 ;   if CHANGEBAUD is set to NO, an error will be sent to SysOp and the
-;   segment will not be processed (BAUDEERRORTPL needs to be changed 
+;   segment will not be processed (BAUDEERRORTPL needs to be changed
 ;   to "baudeerr.tpl")
 ;
 CHANGEBAUD NO
@@ -523,7 +523,7 @@ CHANGESYSTEM NO
 ;   variable to "phonewrn.tpl" or anything else where the content of the
 ;   further warning message is stored);
 ;   if CHANGEPHONE is set to NO, an error will be sent to SysOp and the
-;   segment will not be processed (PHONEERRORTPL needs to be changed 
+;   segment will not be processed (PHONEERRORTPL needs to be changed
 ;   to "phoneerr.tpl")
 ;
 CHANGEPHONE NO

@@ -524,11 +524,11 @@
      Name of the remailer of message reports. Direct indication, and usage
      of macros (see bellow) are both allowed.
 
-     Examples of usage: FROM Pavel Osi‡ov
+     Examples of usage: FROM Pavel Osipov
                         FROM @owner
-                        FROM @name‡rog, v@version
+                        FROM @nameprog, v@version
 
-     Default value: @name‡rog 
+     Default value: @nameprog
 
 
      3.2.3.2  Variable: TO
@@ -537,10 +537,10 @@
      Syntax: TO <toname>
 
      Name of the receiver of message reports.
- 
-     Example: TO @FirstSysO‡Name @LastSysO‡Name
 
-     Default value: SysO‡
+     Example: TO @FirstSysOpName @LastSysOpName
+
+     Default value: SysOp
 
 
      3.2.3.3  Variable: SUBJECT
@@ -589,7 +589,7 @@
 
      Possible attributes are:
 
-     PVT - ‡rivat, the letter is private (standard attribute
+     PVT - privat, the letter is private (standard attribute
            for netmail-messages)
      CRA - crash, urgent letter
      RCV - received, the letter is obtained
@@ -610,7 +610,7 @@
      URQ - file update request, request of the refreshed version of the
            file
 
-     Default: PVT LOC 
+     Default: PVT LOC
 
 
      3.2.3.7  Variable: ONLYONEREPORT
@@ -661,7 +661,7 @@
 
      This variable defines the path and the name of the nodelist. It is
      possible to specify a direct name of the concrete file ord to specify
-     a mask according to which the search for available nodelist is performed. 
+     a mask according to which the search for available nodelist is performed.
 
      The mask is allowed only in the extension and only of two types:
        * - search of the nodelist any extension, both with digital, and
@@ -779,7 +779,7 @@
 
      <any_char> - any character; this character is not significant for the
           program and is put only to determine real location of the
-          following behind it of significant combinations. Hence, 
+          following behind it of significant combinations. Hence,
           'A characters, 'B', '?' in a mask are handled absolutely
           equally (as against a mask, e.g., in variables LOCATION, FLAGS
           etc) and mean " on this place there can be ANY CHARACTER ".
@@ -799,7 +799,7 @@
      addition of the bits multiplied on 10 in appropriate degree, let even
      bit and contains sexadecimal digit. E.g., a name of segment PAV33A78.TXT
      at mask? A % ~ H~H~H~H~H.*C! It will be recognized as
-     8*1 + 7*10 + 10*100 + 3*1000 + + 3*10000 = 34078, 
+     8*1 + 7*10 + 10*100 + 3*1000 + + 3*10000 = 34078,
      at mask? A % ~ D~D~D~D~D.*C! The error message will be obtained.
 
      You can define up to 10 variables SEGMENTFORMAT specifying different
@@ -848,7 +848,7 @@
      above) directory. Second, KILLBAD determines, whether it is
      necessary to search for and delete of old incorrect segments
      in case of obtaining a correct segment from the given bossnode.
-     
+
      At obtaining an incorrect segment its further destiny is defined
      with value KILLBAD. If it is equal ALWAYS (synonym YES) the segment
      after processing will be simply deleted and will not be transferred
@@ -1124,7 +1124,7 @@
      Valid values of flag fields.
      For definition of so called "user-flag (",UFLAG" or ",U,FLAG") you
      should include value without comma: "UFLAG". Checker will recognize
-     such user flag and will track it in the segment, whether it is given in 
+     such user flag and will track it in the segment, whether it is given in
      "UFLAG,UFLAG" format, or "U,FLAG,FLAG".
 
      You can define up to 30 FLAGS variables. Regular expressions are
@@ -1133,7 +1133,7 @@
      Example of usage: FLAGS CM MO LO
                        FLAGS #01 #02 #08 #09 #18 #20
                        FLAGS !!01 !!02 !!08 !!09 !!18 !!20
-                       FLAGS IBN IBN:[0-9] IBN:[1-9][0-9] IBN:[1-9][0-9][0-9] 
+                       FLAGS IBN IBN:[0-9] IBN:[1-9][0-9] IBN:[1-9][0-9][0-9]
                        FLAGS EVY EMA EVY:* EMA:*
                        FLAGS URPK UNPK
                        FLAGS UT[A-X][A-X] UT[A-X][a-x] UT[a-x][A-X] UT[a-x][a-x]
@@ -1201,7 +1201,7 @@
      the reference whether on template with the warning or on template with
      the message on a mistake - depending on value of REMOVEEMPTYLINES.
 
-     Value by default: NO 
+     Value by default: NO
 
 
      3.2.7.2  Variable: READUNIXLINES
@@ -1224,7 +1224,7 @@
      WARNING!!! In case of READUNIXLINES=WARNING or ERROR do not overlook
      to correct in appropriate way value of variable UNIXLINETPL: it should
      contain the reference wheter on the template with the warning message or
-     on template with the message on a mistake. 
+     on template with the message on a mistake.
 
      Value by default: NO
 
@@ -1240,7 +1240,7 @@
      replaced with the first value of variable BAUD. Thus to the sender
      a warning message is sent, but a segment is considered as correct.
      At CHANGEBAUD=NO the error message is sent and the segmentis considered
-     erroneous. 
+     erroneous.
 
      The PNTCHK distribution includes example templates baudwrn.tpl and
      bauderr.tpl (defined by BAUDERRORTPL).
@@ -1259,7 +1259,7 @@
      replaced with the first value of variable BAUD. Thus to the sender
      a warning message is sent, but a segment is considered as correct.
      At CHANGELOCATION=NO the error message is sent and the segmentis considered
-     erroneous. 
+     erroneous.
 
      The PNTCHK distribution includes example templates
      locatwrn.tpl and locaterr.tpl (defined by LOCATERRORTPL).
@@ -1279,7 +1279,7 @@
      CHANGESYSOP=YES: an invalid value in "SysOp" field will be replaced
      with the first value of the SYSOP variable. In this case sender
      will be issued a warning but the segment itself is considered to
-     be correct. 
+     be correct.
      CHANGESYSOP=NO: an error message is produced and the segment is
      considered to be invalid.
      CHANGESYSOP=WARN: a warning is issued but the segment is processed as
@@ -1302,7 +1302,7 @@
      CHANGESYSTEM=YES: an invalid value in "System" field will be replaced
      with the first value of the SYSTEM variable. In this case sender
      will be issued a warning but the segment itself is considered to
-     be correct. 
+     be correct.
      CHANGESYSTEM=NO: an error message is produced and the segment is
      considered to be invalid.
      CHANGESYSTEM=WARN: a warning is issued but the segment is processed as
@@ -1324,7 +1324,7 @@
      CHANGEPHONE=YES: an invalid value in "Phone" field will be replaced
      with the first value of the PHONE variable. In this case sender
      will be issued a warning but the segment itself is considered to
-     be correct. 
+     be correct.
      CHANGEPHONE=NO:  an error message is produced and the segment is
      considered to be invalid.
 
@@ -1555,7 +1555,7 @@
 
      Syntax: FAKECRCSTR <string>
 
-     Variable FAKECRCSTR sets value for @‡ntlcrc which subsequently will
+     Variable FAKECRCSTR sets value for @pntlcrc which subsequently will
      be replaced with real CRC of the pointlist. The process of definition
      of CRC of the pointlist is the following. As at the moment of its
      assembly it is impossible to determine the CRC, since CRC is calculated
@@ -2162,7 +2162,7 @@
      @BAUD           - baudrate of modem
      @NEWBAUD        - new value of "baudrate" field
      @FLAGS          - flags
-     @ADDEDFLAG      - added flag at NOFLAG=ADD 
+     @ADDEDFLAG      - added flag at NOFLAG=ADD
 
      @IDEALSTRING    - at boss-checking correct line that should be here
      @REASON         - reason of non process of segment at work with nodelist
@@ -2216,7 +2216,7 @@
      ERRORTEMPLATE  NETMAIL          PONUMERRTPL     TOUCHSEGMENTS
      EXECBAD        NMBRERRTPL       PREFERRTPL
 
-     PNTCHK distribution contains example configonfig file pnt_lite.ctl, 
+     PNTCHK distribution contains example configonfig file pnt_lite.ctl,
      in which all the necessary changes are made.
 
 
@@ -2314,11 +2314,11 @@
      N5020C Alex Golosov, 2:5020/381 for simplification of the check of
      the coming point segments (then he was engaged in the point list),
      in exchange of CheckNL by Michel Lavrentiev (?), not responding all
-     the requirements. 
+     the requirements.
 
      Version 0.03.alpha, issued in August, 19, 1997 started in file
      AFTNMISC. Thus it was beginning of the wide distribution of PNTCHK
-     on fid net. 
+     on fid net.
 
      First stable (0.05.beta) version of the program started October 27, 1997.
      The number of the registered users made only 4 persons. And to the
@@ -2345,27 +2345,27 @@
      the number of users was already 24, and in May 18, 1998 - 30) has
      forced to insert all new possibilities to make PNTCHK responding to
      the demands of the increasing number of people. It turned PNTCHK
-     from highly specialized private project in a really public project. 
+     from highly specialized private project in a really public project.
 
      During the existence of the program 19 versions started. Not only the
      functions of checking, but also automatic correcting segments were
      added, the syntax of masks was widen, the whole block on the assembly
      of the point list from segments were added in to the program. At the
-     end the site of the support of the program http://pntchk.ibch.ru/ 
-     (it is accessible as well as http://www.ibch.ru/pntchk/) was created. 
+     end the site of the support of the program http://pntchk.ibch.ru/
+     (it is accessible as well as http://www.ibch.ru/pntchk/) was created.
 
      August, 7, 2000 there was a last public alpha program - 0.19.alpha
      (number of registered users - 54). To this moment PNTCHK became quite
      stable, the program code licked enough. It has allowed to make a
      decision about the beginning of the finishing stage of the release
-     of versions 0.xx and preparation for the release 1.00. 
+     of versions 0.xx and preparation for the release 1.00.
 
      From the 19th of November 2000 to January, 05, 2004 6 pre-releases
      of the program were released which primary goal was porting of the
      program under the different operating systems, and also the correction
-     of all errors connected to this process. 
+     of all errors connected to this process.
 
-     And....... long-awaited release 1.00 was issued. 
+     And....... long-awaited release 1.00 was issued.
 
 
 
@@ -2378,10 +2378,10 @@
      Alex Golosoff, 2:5020/381 - the honorable owner of the registration
      code #2 without the demand of which to write PNTCHK, no PNTCHK would
      appear in life. You should be the suicide to decide to write such
-     program yourself .;) 
+     program yourself .;)
 
      Michel Lavrentyev, 2:5020/35 for his CheckNL, letters-reports of which
-     have lain in a basis of appearance of letters-reports PNTCHK. 
+     have lain in a basis of appearance of letters-reports PNTCHK.
 
      basil v. vorontsov, 2:5020/487 for his pascal libraries for the work
      with a log-file, a ctl-file and for work with netmail and
@@ -2393,7 +2393,7 @@
      improvement of the program, and also the reports about mistakes.
      Thanks to this person MORE THAN A HALF of all bugs were found and
      fixed. A great thank to him for the help in conforming the files
-     with the norms of the English language. 
+     with the norms of the English language.
 
      Dima Mushnitskiy, 2:5020/970 - before the appearance of the program
      page who supported the opportunity of distribution of checker
